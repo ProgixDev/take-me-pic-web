@@ -4,7 +4,7 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Bell, Search, Menu, LogOut } from "lucide-react";
 import { Avatar, useToast } from "@/components/ui";
-import { signOutAdmin } from "@/lib/auth";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 /** Admin topbar: breadcrumb slot, search, notifications, profile. */
 export function AdminTopbar({
@@ -16,10 +16,12 @@ export function AdminTopbar({
 }) {
   const router = useRouter();
   const toast = useToast();
-  function logout() {
-    signOutAdmin();
+  async function logout() {
+    const supabase = createSupabaseBrowserClient();
+    await supabase.auth.signOut();
     toast.push("Déconnexion réussie. À bientôt ✦", "ok");
     router.replace("/login");
+    router.refresh();
   }
   return (
     <header className="h-16 shrink-0 bg-paper/85 backdrop-blur border-b-[1.5px] border-[var(--ink-line)] flex items-center gap-4 px-5">

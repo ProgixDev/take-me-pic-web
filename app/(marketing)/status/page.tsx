@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useEffect } from "react";
 import { CheckCircle, AlertCircle, Clock, ChevronDown, ChevronUp, RefreshCw } from "lucide-react";
 import { PageHero } from "@/components/marketing/MarketingBits";
 import { PaperCard, Badge, Chip, SectionHeading, Stamp, useToast } from "@/components/ui";
@@ -24,8 +25,30 @@ interface ServiceComponent {
   };
 }
 
+type SupabaseHealth =
+  | {
+      state: "checking";
+    }
+  | {
+      state: "connected";
+      latencyMs: number;
+      projectUrl: string;
+    }
+  | {
+      state: "error";
+      message: string;
+    };
+
 /* ── Mock service data ──────────────────────────────────── */
 const SERVICES: ServiceComponent[] = [
+  {
+    id: "supabase",
+    name: "Supabase",
+    description: "Base de données, Auth, Storage et Realtime.",
+    status: "opérationnel",
+    uptime: 99.95,
+    emoji: "⚡",
+  },
   {
     id: "api",
     name: "API principale",
@@ -230,12 +253,50 @@ export default function StatusPage() {
   const t = useT();
   const { push } = useToast();
   const [refreshing, setRefreshing] = useState(false);
+  const [supabaseHealth, setSupabaseHealth] = useState<SupabaseHealth>({
+    state: "checking",
+  });
+
+  async function refreshSupabaseHealth() {
+    setSupabaseHealth({ state: "checking" });
+
+    try {
+      const response = await fetch("/api/health/supabase", {
+        cache: "no-store",
+      });
+      const data = await response.json();
+
+      if (!response.ok || !data.ok) {
+        setSupabaseHealth({
+          state: "error",
+          message: data.error ?? `Supabase responded with status ${data.status ?? response.status}`,
+        });
+        return;
+      }
+
+      setSupabaseHealth({
+        state: "connected",
+        latencyMs: data.latencyMs,
+        projectUrl: data.projectUrl,
+      });
+    } catch (error) {
+      setSupabaseHealth({
+        state: "error",
+        message: error instanceof Error ? error.message : "Supabase health check failed",
+      });
+    }
+  }
+
+  useEffect(() => {
+    void refreshSupabaseHealth();
+  }, []);
 
   const allOk = SERVICES.every((s) => s.status === "opérationnel" || s.status === "incident résolu");
   const fullyOk = SERVICES.every((s) => s.status === "opérationnel");
 
   function handleRefresh() {
     setRefreshing(true);
+    void refreshSupabaseHealth();
     setTimeout(() => {
       setRefreshing(false);
       push(t("État des services mis à jour."), "info");
@@ -321,6 +382,45 @@ export default function StatusPage() {
 
           {/* Sidebar */}
           <aside className="space-y-6">
+            {/* Global uptime summary */}
+            <PaperCard
+              shadow={supabaseHealth.state === "error" ? "gold" : "soft"}
+              className="p-5"
+            >
+              <h4 className="font-[family-name:var(--font-hand)] text-xl text-gold-deep mb-4 -rotate-1">
+                {t("Connexion Supabase")}
+              </h4>
+              {supabaseHealth.state === "checking" && (
+                <div className="flex items-center gap-2 font-[family-name:var(--font-serif)] text-[13px] text-ink-faded">
+                  <RefreshCw size={13} className="animate-spin" />
+                  {t("Vérification en cours")}
+                </div>
+              )}
+              {supabaseHealth.state === "connected" && (
+                <div className="space-y-3">
+                  <Badge tone="green" dot>
+                    {t("Connecté")}
+                  </Badge>
+                  <p className="font-[family-name:var(--font-serif)] text-[13px] text-ink-faded leading-relaxed">
+                    {t("Le web app atteint Supabase avec la clé publishable.")}
+                  </p>
+                  <div className="font-[family-name:var(--font-type)] text-[10px] uppercase tracking-[0.1em] text-ink-faded">
+                    {supabaseHealth.latencyMs}ms · {supabaseHealth.projectUrl.replace(/^https?:\/\//, "")}
+                  </div>
+                </div>
+              )}
+              {supabaseHealth.state === "error" && (
+                <div className="space-y-3">
+                  <Badge tone="red" dot>
+                    {t("Non connecté")}
+                  </Badge>
+                  <p className="font-[family-name:var(--font-serif)] text-[13px] text-ink-faded leading-relaxed">
+                    {supabaseHealth.message}
+                  </p>
+                </div>
+              )}
+            </PaperCard>
+
             {/* Global uptime summary */}
             <PaperCard shadow="soft" className="p-5">
               <h4 className="font-[family-name:var(--font-hand)] text-xl text-gold-deep mb-4 -rotate-1">

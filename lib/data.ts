@@ -107,6 +107,7 @@ export const getUser = (id: string) => users.find((u) => u.id === id) ?? users[0
 export type SessionStatus = "completed" | "active" | "cancelled" | "pending";
 export interface PhotoSession {
   id: string;
+  helpRequestId: number;
   requester: AdminUser;
   photographer: AdminUser;
   spot: string;
@@ -124,6 +125,7 @@ export const sessions: PhotoSession[] = Array.from({ length: 36 }, (_, i) => {
   const st: SessionStatus[] = ["completed", "completed", "active", "completed", "cancelled", "pending"];
   return {
     id: `s${1000 + i}`,
+    helpRequestId: 1000 + i,
     requester: r,
     photographer: p,
     spot: ["Pont des Arts", "Place des Vosges", "Jemaa el-Fna", "Alfama", "Sagrada Família", "Shibuya"][i % 6],

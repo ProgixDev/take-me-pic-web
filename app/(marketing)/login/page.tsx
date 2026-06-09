@@ -13,8 +13,8 @@ import {
   Modal,
   useToast,
 } from "@/components/ui";
-import { signInAdmin } from "@/lib/auth";
 import { useT } from "@/i18n/I18nProvider";
+import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 
 export default function LoginPage() {
   const t = useT();
@@ -27,28 +27,49 @@ export default function LoginPage() {
   const [forgotEmail, setForgotEmail] = useState("");
   const [loading, setLoading] = useState(false);
 
-  function handleLogin(e: React.FormEvent) {
+  async function handleLogin(e: React.FormEvent) {
     e.preventDefault();
     if (!email || !password) {
       toast.push(t("Remplis tous les champs avant de continuer."), "err");
       return;
     }
     setLoading(true);
-    setTimeout(() => {
-      signInAdmin();
-      toast.push(t("Connexion réussie — bienvenue dans la salle des cartes ✨"), "ok");
-      router.push("/admin");
-    }, 700);
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.signInWithPassword({
+      email,
+      password,
+    });
+
+    setLoading(false);
+
+    if (error) {
+      toast.push(t("Identifiants invalides ou compte non autorisé."), "err");
+      return;
+    }
+
+    toast.push(t("Connexion réussie — bienvenue dans la salle des cartes"), "ok");
+    router.push("/admin");
+    router.refresh();
   }
 
-  function handleForgot(e: React.FormEvent) {
+  async function handleForgot(e: React.FormEvent) {
     e.preventDefault();
     if (!forgotEmail) {
       toast.push(t("Saisis ton adresse e-mail."), "err");
       return;
     }
+    const supabase = createSupabaseBrowserClient();
+    const { error } = await supabase.auth.resetPasswordForEmail(forgotEmail, {
+      redirectTo: `${window.location.origin}/login`,
+    });
+
+    if (error) {
+      toast.push(t("Impossible d'envoyer le lien pour le moment."), "err");
+      return;
+    }
+
     setForgotOpen(false);
-    toast.push(t("Lien de réinitialisation envoyé à {{forgotEmail}} 📬", { forgotEmail }), "ok");
+    toast.push(t("Lien de réinitialisation envoyé à {{forgotEmail}}", { forgotEmail }), "ok");
     setForgotEmail("");
   }
 
