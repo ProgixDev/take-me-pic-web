@@ -1,0 +1,128 @@
+{
+  "project": "Take Me Pic Web/Admin",
+  "currentFocus": "Supabase-connected admin operations and staff safety workflows",
+  "currentMilestone": "Web Phase 1 - Admin trust and safety foundation",
+  "updated": "2026-06-10",
+  "sourceBoard": "/Users/macbookpro/Documents/Progix/take-my-pic/.agent-board",
+  "recommendedStart": "TASK-002",
+  "columns": [
+    "Backlog",
+    "Ready",
+    "In Progress",
+    "Review",
+    "Blocked",
+    "Done"
+  ],
+  "tasks": [
+    {
+      "id": "TASK-001",
+      "title": "Establish Supabase web baseline and health check",
+      "status": "Done",
+      "priority": "P0",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-001.md",
+      "blockedBy": []
+    },
+    {
+      "id": "TASK-002",
+      "title": "Replace mock admin auth with Supabase staff gate",
+      "status": "Review",
+      "priority": "P0",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-002.md",
+      "blockedBy": [
+        "TASK-001"
+      ]
+    },
+    {
+      "id": "TASK-003",
+      "title": "Wire reports, bans, and audit-log read models",
+      "status": "Review",
+      "priority": "P0",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-003.md",
+      "blockedBy": [
+        "TASK-002"
+      ]
+    },
+    {
+      "id": "TASK-004",
+      "title": "Add staff-only moderation mutations",
+      "status": "Backlog",
+      "priority": "P0",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-004.md",
+      "blockedBy": [
+        "TASK-003"
+      ]
+    },
+    {
+      "id": "TASK-005",
+      "title": "Wire users, roles, and verification admin views",
+      "status": "Backlog",
+      "priority": "P1",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-005.md",
+      "blockedBy": [
+        "TASK-002"
+      ]
+    },
+    {
+      "id": "TASK-006",
+      "title": "Wire request/session support inspection",
+      "status": "Backlog",
+      "priority": "P1",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-006.md",
+      "blockedBy": [
+        "TASK-002"
+      ]
+    },
+    {
+      "id": "TASK-007",
+      "title": "Wire community and spots moderation",
+      "status": "Backlog",
+      "priority": "P1",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-007.md",
+      "blockedBy": [
+        "TASK-004"
+      ]
+    },
+    {
+      "id": "TASK-008",
+      "title": "Wire notifications and content operations",
+      "status": "Backlog",
+      "priority": "P1",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-008.md",
+      "blockedBy": [
+        "TASK-002"
+      ]
+    },
+    {
+      "id": "TASK-009",
+      "title": "Add admin analytics from Supabase views/RPCs",
+      "status": "Backlog",
+      "priority": "P2",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-009.md",
+      "blockedBy": [
+        "TASK-003",
+        "TASK-005",
+        "TASK-006"
+      ]
+    },
+    {
+      "id": "TASK-010",
+      "title": "Prepare premium, payments, and booking operations",
+      "status": "Backlog",
+      "priority": "P2",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-010.md",
+      "blockedBy": [
+        "TASK-002"
+      ]
+    }
+  ]
+}

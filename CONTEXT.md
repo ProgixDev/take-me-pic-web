@@ -64,6 +64,34 @@ _Avoid_: User profile, participant identity
 Metadata showing that messages were sent in a session conversation, such as counts and first or last sent times.
 _Avoid_: Read receipt, delivery state, typing state, presence
 
+**Moderation read access**:
+The effective capability that allows staff to read reports, bans, and the audit log.
+_Avoid_: Admin read, database access
+
+**Report target**:
+The single directly referenced subject of a report: a user, a post, a comment, a session, a conversation, or a message.
+_Avoid_: Reported participant, implied target
+
+**Moderation empty state**:
+A valid moderation view state where the backend returned zero rows for an authorized staff read.
+_Avoid_: Mock fallback, load failure
+
+**Moderation mutation**:
+A staff-only write that changes moderation state and always produces an audit entry.
+_Avoid_: Direct table write, manual fix
+
+**Report decision**:
+A staff status change on a report to reviewing, resolved, or dismissed.
+_Avoid_: Report edit, report deletion
+
+**Active ban**:
+A ban with no expiry or with an expiry in the future.
+_Avoid_: Permanent ban, ban row
+
+**Ban lift**:
+Ending an active ban by expiring it immediately while keeping the ban history.
+_Avoid_: Ban deletion, ban removal
+
 ## Relationships
 
 - A **Staff-only** workflow requires a task-specific capability.
@@ -82,6 +110,13 @@ _Avoid_: Read receipt, delivery state, typing state, presence
 - A **Conversation summary** may include **Participant roles** without duplicating participant identities.
 - A **Conversation summary** may include **Message activity** but not read, delivery, typing, or presence state.
 - A **Conversation summary** can exist for any session status when staff have the required capability.
+- **Moderation read access** is an **Effective capability** held by every staff role in the trust-and-safety foundation phase.
+- A report has exactly one **Report target**.
+- A **Report signal** counts reports whose **Report target** is the reviewed session or conversation.
+- A **Moderation empty state** is distinct from a load failure, and a load failure never shows raw backend errors to staff.
+- A **Moderation mutation** requires **Live staff access** and writes a matching audit entry in the same transaction.
+- A terminal **Report decision** (resolved or dismissed) records which staff account decided it.
+- A **Ban lift** ends an **Active ban** without deleting its history.
 
 ## Example dialogue
 
@@ -132,3 +167,9 @@ _Avoid_: Read receipt, delivery state, typing state, presence
 - "has reports" was too weak and "report details" was too broad — resolved: use a **Report signal** with a report count.
 - "participant" was ambiguous between role and identity — resolved: summaries expose **Participant roles**, not profiles.
 - "activity" was ambiguous between sent-message metadata and communication diagnostics — resolved: **Message activity** excludes read, delivery, typing, and presence state.
+- "report target" was ambiguous between the reported participant and the directly referenced subject — resolved: a report points at one **Report target**, including session, conversation, and message targets.
+- "no data" was ambiguous between empty tables and failed reads — resolved: zero rows is a **Moderation empty state**; failures are surfaced as generic error states without raw backend messages.
+- "staff can read moderation" was ambiguous between per-role rules and a shared capability — resolved: **Moderation read access** is granted to all staff roles in the current phase.
+- "unban" was ambiguous between deleting a ban and ending it — resolved: a **Ban lift** expires the **Active ban** and keeps history.
+- "resolve a report" was ambiguous between any status change and a terminal decision — resolved: a **Report decision** covers reviewing, resolved, and dismissed, and terminal decisions record the resolver.
+- "audit logging" was ambiguous between best-effort and guaranteed — resolved: a **Moderation mutation** and its audit entry succeed or fail together.
