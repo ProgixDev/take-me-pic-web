@@ -60,6 +60,9 @@ if (hasNonStaffCreds) {
 export default defineConfig({
   testDir: "./tests/e2e",
   fullyParallel: true,
+  // Parallel staff tests share one storage state; a concurrent refresh-token
+  // rotation can transiently bounce a request to /login. One retry absorbs it.
+  retries: 1,
   reporter: "list",
   use: {
     baseURL,
