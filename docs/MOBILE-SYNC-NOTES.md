@@ -30,6 +30,16 @@ message_id       bigint null references messages(id)      on delete set null
   (`open | reviewing | resolved | dismissed`). Inserts from mobile should
   only ever create `open`.
 
+### `help_requests` staff read policy (added 2026-06-11)
+
+`help_requests_staff_read` grants staff `SELECT` on the full help request
+lifecycle (ADR-0004). Party-scoped access for regular users is unchanged.
+`conversations`, `messages`, and `session_photos` remain participant-only.
+
+- **Mobile action:** none; listed for awareness. Do not rely on the
+  pre-existing "status = requested is publicly readable" behavior changing
+  — it is still in place.
+
 ### `private` schema grant
 
 `authenticated` now has `USAGE` on schema `private` plus `EXECUTE` on

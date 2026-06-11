@@ -1,6 +1,6 @@
 # TASK-006 - Wire Request and Session Support Inspection
 
-Status: Backlog
+Status: Done
 Priority: P1
 Project: Take Me Pic Web/Admin
 Milestone: Web Phase 1 - Admin trust and safety foundation
@@ -22,12 +22,12 @@ data to live Supabase reads.
 
 ## Acceptance Criteria
 
-- [ ] Request list/detail use live Supabase data.
-- [ ] Session list/detail use live Supabase data.
-- [ ] Staff-only access is enforced server-side.
-- [ ] Sensitive chat/photo data is not exposed without an explicit policy.
-- [ ] `npx tsc --noEmit` passes.
-- [ ] `npm run build` passes.
+- [x] Request list/detail use live Supabase data.
+- [x] Session list/detail use live Supabase data.
+- [x] Staff-only access is enforced server-side.
+- [x] Sensitive chat/photo data is not exposed without an explicit policy.
+- [x] `npx tsc --noEmit` passes.
+- [x] `npm run build` passes.
 
 ## Technical Notes
 
@@ -44,3 +44,21 @@ data to live Supabase reads.
 
 - Manual request/session route checks.
 - TypeScript and production build.
+- Playwright: anonymous fail-closed + staff access on `/admin/requests`
+  and `/admin/sessions` (`tests/e2e/admin-views.spec.ts`).
+
+## Hardening notes (grill session 2026-06-11)
+
+- Critical RLS finding: the party-scoped policy on `help_requests` meant
+  staff silently saw only publicly-visible `requested` rows. Fixed with
+  the `help_requests_staff_read` policy applied remotely as a migration
+  (ADR-0004); chat, messages, and session photos stay participant-only.
+- Requests and sessions are one entity: both views read `help_requests`;
+  the sessions view filters helper-engaged states (accepted, in_session,
+  completed, rated).
+- Request/session detail shares one client anchored by the help request,
+  with the metadata-only conversation summary (ADR-0001 RPC) and a report
+  signal count; no chat content or photos are rendered.
+- The PostGIS `location` column is intentionally not selected or decoded.
+- Mock-only force-expire and contact actions were removed; lifecycle
+  mutations need their own audited boundary.

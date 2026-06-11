@@ -25,8 +25,8 @@ Adapted for this Next.js web/admin repo.
 | TASK-002 | Replace mock admin auth with Supabase staff gate | Done | Agent | P0 |
 | TASK-003 | Wire reports, bans, and audit-log read models | Done | Agent | P0 |
 | TASK-004 | Add staff-only moderation mutations | Done | Agent | P0 |
-| TASK-005 | Wire users, roles, and verification admin views | Backlog | Agent | P1 |
-| TASK-006 | Wire request/session support inspection | Backlog | Agent | P1 |
+| TASK-005 | Wire users, roles, and verification admin views | Done | Agent | P1 |
+| TASK-006 | Wire request/session support inspection | Done | Agent | P1 |
 | TASK-007 | Wire community and spots moderation | Backlog | Agent | P1 |
 | TASK-008 | Wire notifications and content operations | Backlog | Agent | P1 |
 | TASK-009 | Add admin analytics from Supabase views/RPCs | Backlog | Agent | P2 |
@@ -34,10 +34,11 @@ Adapted for this Next.js web/admin repo.
 
 ## Recommended Start
 
-Start with TASK-005. TASK-001 through TASK-004 are done: the moderation
-SQL is applied to the remote project as recorded migrations, the staff
-account `admin-tmp@progix.com` is provisioned, and resolve/ban/unban were
-verified end-to-end with matching audit rows.
+Start with TASK-007. TASK-001 through TASK-006 are done: moderation reads
+and mutations, users/roles/verification views, and request/session support
+inspection all run live against Supabase, with the
+`help_requests_staff_read` policy applied remotely (ADR-0004) and
+Playwright covering anonymous/staff/non-staff access on every wired route.
 
 ## Web-First Implementation Steps
 

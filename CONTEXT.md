@@ -92,6 +92,26 @@ _Avoid_: Permanent ban, ban row
 Ending an active ban by expiring it immediately while keeping the ban history.
 _Avoid_: Ban deletion, ban removal
 
+**Account status**:
+The operational state of a user account derived from its active ban: active, suspended for a temporary ban, banned for a permanent ban.
+_Avoid_: Profile flag, pending account
+
+**Verification state**:
+The trust level of a profile derived from its verification fields: verified, partial when only e-mail or phone is confirmed, none otherwise.
+_Avoid_: KYC status, identity check
+
+**Staff roster**:
+The list of accounts holding staff roles, read from server-side role grants.
+_Avoid_: Team page list, invited members
+
+**Support inspection**:
+A read-only staff view of help request lifecycles and session metadata.
+_Avoid_: Session moderation, chat review
+
+**Session**:
+A help request whose helper is engaged: accepted, in session, completed, or rated.
+_Avoid_: Conversation, booking
+
 ## Relationships
 
 - A **Staff-only** workflow requires a task-specific capability.
@@ -117,6 +137,10 @@ _Avoid_: Ban deletion, ban removal
 - A **Moderation mutation** requires **Live staff access** and writes a matching audit entry in the same transaction.
 - A terminal **Report decision** (resolved or dismissed) records which staff account decided it.
 - A **Ban lift** ends an **Active ban** without deleting its history.
+- An **Account status** is derived from the **Active ban** state, never from a stored flag.
+- A **Session** is a **Help request** in a helper-engaged lifecycle state.
+- **Support inspection** covers lifecycle metadata and never exposes chat content or session photos.
+- A **Staff roster** reflects role grants; account e-mails stay in Supabase Auth and are not part of admin reads.
 
 ## Example dialogue
 
@@ -173,3 +197,8 @@ _Avoid_: Ban deletion, ban removal
 - "unban" was ambiguous between deleting a ban and ending it — resolved: a **Ban lift** expires the **Active ban** and keeps history.
 - "resolve a report" was ambiguous between any status change and a terminal decision — resolved: a **Report decision** covers reviewing, resolved, and dismissed, and terminal decisions record the resolver.
 - "audit logging" was ambiguous between best-effort and guaranteed — resolved: a **Moderation mutation** and its audit entry succeed or fail together.
+- "user status" was ambiguous between stored flags and ban-derived state — resolved: **Account status** derives from the **Active ban**; the `is_banned` profile flag is not an authority.
+- "user email" was ambiguous between profile data and auth data — resolved: e-mails live in Supabase Auth and are not exposed in admin reads.
+- "requests vs sessions" was ambiguous as two entities — resolved: both are **Help requests**; the sessions view filters helper-engaged states.
+- "staff can see sessions" silently returned a partial list — resolved: staff hold a read policy on help request lifecycles, while chat stays behind the metadata RPC.
+- "roles & permissions screen" implied an editable matrix — resolved: it reflects the real **Staff roster** read-only until differentiated capabilities exist server-side.
