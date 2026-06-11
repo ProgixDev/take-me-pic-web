@@ -28,13 +28,16 @@ Adapted for this Next.js web/admin repo.
 | TASK-005 | Wire users, roles, and verification admin views | Done | Agent | P1 |
 | TASK-006 | Wire request/session support inspection | Done | Agent | P1 |
 | TASK-007 | Wire community and spots moderation | Done | Agent | P1 |
+| TASK-007-2 | Read-only karma ledger and ratings inspection | Backlog | Agent | P1 |
 | TASK-008 | Wire notifications and content operations | Backlog | Agent | P1 |
 | TASK-009 | Add admin analytics from Supabase views/RPCs | Backlog | Agent | P2 |
 | TASK-010 | Prepare premium, payments, and booking operations | Backlog | Agent | P2 |
 
 ## Recommended Start
 
-Start with TASK-008. TASK-001 through TASK-007 are done: moderation reads
+Start with TASK-007-2: it pairs with the karma leaderboard and rating
+feature being built next in the mobile repo, so both clients land on the
+same `karma_ledger`/`ratings` semantics. Then TASK-008. TASK-001 through TASK-007 are done: moderation reads
 and mutations, users/roles/verification views, request/session support
 inspection, and community/spots moderation all run live against Supabase.
 Community content uses audited soft-hide (ADR-0005), spots have a
@@ -67,9 +70,11 @@ stays mock (no backend table); spot field editing is deferred to TASK-008.
 5. TASK-005 - Users, roles, and verification.
 6. TASK-006 - Request/session support inspection.
 7. TASK-007 - Community and spots moderation.
-8. TASK-008 - Notifications and content operations.
-9. TASK-009 - Admin analytics.
-10. TASK-010 - Premium, payments, and booking operations.
+8. TASK-007-2 - Karma ledger and ratings inspection (sync with mobile karma
+   feature work).
+9. TASK-008 - Notifications and content operations.
+10. TASK-009 - Admin analytics.
+11. TASK-010 - Premium, payments, and booking operations.
 
 ## Working Rules
 
