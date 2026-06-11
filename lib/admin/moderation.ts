@@ -179,7 +179,7 @@ function summarizeDetail(detail: unknown): string {
   return "—";
 }
 
-async function loadProfiles(
+export async function loadProfiles(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
   ids: string[],
 ) {
@@ -202,7 +202,7 @@ async function loadProfiles(
   return new Map(rows.map((row) => [row.id, toProfileSummary(row)]));
 }
 
-async function requireStaffSession(): Promise<StaffGuardResult> {
+export async function requireStaffSession(): Promise<StaffGuardResult> {
   const session = await getStaffSession();
 
   if (session.kind === "unauthenticated") {
@@ -216,7 +216,7 @@ async function requireStaffSession(): Promise<StaffGuardResult> {
   return { kind: "ok", session };
 }
 
-function mapQueryError(error: QueryError, fallback: string): { kind: "error"; message: string } {
+export function mapQueryError(error: QueryError, fallback: string): { kind: "error"; message: string } {
   console.error("[admin/moderation]", fallback, error.code ?? "", error.message ?? "");
   return {
     kind: "error",
