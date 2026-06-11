@@ -112,6 +112,30 @@ _Avoid_: Session moderation, chat review
 A help request whose helper is engaged: accepted, in session, completed, or rated.
 _Avoid_: Conversation, booking
 
+**Community content**:
+A user-created post or comment in the community feed.
+_Avoid_: UGC, social content, story
+
+**Content hide**:
+A staff-only moderation mutation that makes community content invisible to the community while keeping it stored.
+_Avoid_: Content deletion, removal, takedown
+
+**Content restore**:
+A staff-only moderation mutation that ends a content hide.
+_Avoid_: Approval, re-publish, unflag
+
+**Flagged content**:
+Community content that has at least one open report against it, derived from report state.
+_Avoid_: Flagged column, stored flag, reported status
+
+**Spot submission**:
+A user-created photo spot that starts in pending review and is invisible to the community until approved.
+_Avoid_: Live spot, draft spot
+
+**Spot review decision**:
+A staff approval or rejection of a spot submission.
+_Avoid_: Spot edit, status toggle, spot update
+
 ## Relationships
 
 - A **Staff-only** workflow requires a task-specific capability.
@@ -141,6 +165,13 @@ _Avoid_: Conversation, booking
 - A **Session** is a **Help request** in a helper-engaged lifecycle state.
 - **Support inspection** covers lifecycle metadata and never exposes chat content or session photos.
 - A **Staff roster** reflects role grants; account e-mails stay in Supabase Auth and are not part of admin reads.
+- A **Content hide** is a **Moderation mutation** on **Community content** and keeps the content stored.
+- A **Content restore** ends a **Content hide** without erasing audit history.
+- The author of hidden **Community content** can still see their own content.
+- **Flagged content** derives from open reports whose **Report target** is the content; it is never a stored flag.
+- Community screens perform **Content hides** and **Content restores** only; **Report decisions** stay in the moderation workflow.
+- A **Spot submission** is visible only to its creator and staff until a **Spot review decision** approves it.
+- A **Spot review decision** is a **Moderation mutation** and writes an audit entry.
 
 ## Example dialogue
 
@@ -174,6 +205,14 @@ _Avoid_: Conversation, booking
 > **Domain expert:** "No — the summary shows **Message activity** only."
 > **Dev:** "Should cancelled sessions hide their **Conversation summary**?"
 > **Domain expert:** "No — session status does not change the staff capability requirement."
+> **Dev:** "Should staff delete a reported post?"
+> **Domain expert:** "No — staff perform a **Content hide**, which keeps the content stored as evidence."
+> **Dev:** "Does approving a comment clear its reports?"
+> **Domain expert:** "No — community screens only change visibility; **Report decisions** happen in moderation."
+> **Dev:** "Is a 'flagged' post a stored status?"
+> **Domain expert:** "No — **Flagged content** is derived from open reports, like **Account status** derives from the **Active ban**."
+> **Dev:** "Can the community see a freshly submitted spot?"
+> **Domain expert:** "No — a **Spot submission** stays creator-and-staff-only until a **Spot review decision** approves it."
 
 ## Flagged ambiguities
 
@@ -202,3 +241,8 @@ _Avoid_: Conversation, booking
 - "requests vs sessions" was ambiguous as two entities — resolved: both are **Help requests**; the sessions view filters helper-engaged states.
 - "staff can see sessions" silently returned a partial list — resolved: staff hold a read policy on help request lifecycles, while chat stays behind the metadata RPC.
 - "roles & permissions screen" implied an editable matrix — resolved: it reflects the real **Staff roster** read-only until differentiated capabilities exist server-side.
+- "removed post" was ambiguous between deletion and hiding — resolved: staff perform a **Content hide**; permanent deletion is not a phase-1 admin operation.
+- "approve a comment" was ambiguous between report dismissal and visibility — resolved: community screens do **Content restores**; **Report decisions** stay in moderation.
+- "pending comment" implied a pre-moderation queue that does not exist — resolved: comments publish immediately; derived states are flagged, hidden, or published.
+- "spot status" was ambiguous between an editable form field and a reviewed lifecycle — resolved: spot status changes only through a **Spot review decision**.
+- "stories moderation" assumed a backend that does not exist — resolved: there is no stories table; the stories screen stays out of scope for live wiring.

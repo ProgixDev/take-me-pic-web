@@ -3,7 +3,7 @@
 Project: Take Me Pic Web/Admin
 Current focus: Supabase-connected admin operations and staff safety workflows
 Current milestone: Web Phase 1 - Admin trust and safety foundation
-Updated: 2026-06-10
+Updated: 2026-06-11
 
 Source board: `/Users/macbookpro/Documents/Progix/take-my-pic/.agent-board`
 Adapted for this Next.js web/admin repo.
@@ -27,18 +27,20 @@ Adapted for this Next.js web/admin repo.
 | TASK-004 | Add staff-only moderation mutations | Done | Agent | P0 |
 | TASK-005 | Wire users, roles, and verification admin views | Done | Agent | P1 |
 | TASK-006 | Wire request/session support inspection | Done | Agent | P1 |
-| TASK-007 | Wire community and spots moderation | Backlog | Agent | P1 |
+| TASK-007 | Wire community and spots moderation | Done | Agent | P1 |
 | TASK-008 | Wire notifications and content operations | Backlog | Agent | P1 |
 | TASK-009 | Add admin analytics from Supabase views/RPCs | Backlog | Agent | P2 |
 | TASK-010 | Prepare premium, payments, and booking operations | Backlog | Agent | P2 |
 
 ## Recommended Start
 
-Start with TASK-007. TASK-001 through TASK-006 are done: moderation reads
-and mutations, users/roles/verification views, and request/session support
-inspection all run live against Supabase, with the
-`help_requests_staff_read` policy applied remotely (ADR-0004) and
-Playwright covering anonymous/staff/non-staff access on every wired route.
+Start with TASK-008. TASK-001 through TASK-007 are done: moderation reads
+and mutations, users/roles/verification views, request/session support
+inspection, and community/spots moderation all run live against Supabase.
+Community content uses audited soft-hide (ADR-0005), spots have a
+pending/approved/rejected review lifecycle (ADR-0006), and Playwright covers
+anonymous/staff/non-staff access on every wired route. The stories screen
+stays mock (no backend table); spot field editing is deferred to TASK-008.
 
 ## Web-First Implementation Steps
 

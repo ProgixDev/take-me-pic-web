@@ -94,7 +94,47 @@ devs don't duplicate ban/resolve logic client-side.
 - Audit actions written by the web console: `report_status_update`,
   `user_ban`, `user_unban` (target_type `report` or `user`).
 
-## 6. Open items to coordinate (not yet done anywhere)
+## 6. Community and spots moderation (TASK-007, added 2026-06-11)
+
+### `posts` and `comments` gained soft-hide columns (ADR-0005)
+
+```
+hidden_at  timestamptz null
+hidden_by  uuid null references profiles(id) on delete set null
+```
+
+- Read policies now exclude hidden rows for everyone except the author and
+  staff: `hidden_at is null OR author_id = auth.uid() OR private.is_staff()`.
+- **Mobile action:** none required for feeds (hidden content simply stops
+  appearing). Optionally badge own-hidden content ("masqué par la modération")
+  since authors still see their own hidden posts/comments.
+- Staff hide/restore goes through `admin_set_post_visibility(post_id, hide,
+  reason)` and `admin_set_comment_visibility(comment_id, hide, reason)` —
+  staff-only, audited, do NOT call from mobile.
+- The pre-existing staff `DELETE` policies on `posts`/`comments` remain but are
+  an unaudited write path; the web admin never uses them. Mobile repo should
+  decide whether to drop staff from those policies.
+
+### `spots` gained a review lifecycle (ADR-0006)
+
+```
+status       public.spot_status not null default 'pending'
+             (pending | approved | rejected)
+reviewed_at  timestamptz null
+reviewed_by  uuid null references profiles(id) on delete set null
+```
+
+- `spots_read` policy now: `status = 'approved' OR created_by = auth.uid() OR
+  private.is_staff()`.
+- **Mobile action (behavior change):** newly submitted spots are invisible to
+  other users until staff approve them. Show the creator a "pending review"
+  state on their own spots; today the app likely assumes immediate visibility.
+- Staff approve/reject goes through `admin_review_spot(spot_id, decision,
+  reason)` — staff-only, audited, do NOT call from mobile.
+- New audit actions: `post_visibility_update`, `comment_visibility_update`,
+  `spot_review`.
+
+## 7. Open items to coordinate (not yet done anywhere)
 
 1. **`profiles.is_banned` is not maintained by the new RPCs.** Decide: either
    the RPCs also flip it (one more statement in the same transaction), or
