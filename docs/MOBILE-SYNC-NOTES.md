@@ -5,6 +5,11 @@ Audience: the Take Me Pic mobile repo (`/Users/macbookpro/Documents/Progix/take-
 Status of backend: all changes below are LIVE on the remote Supabase project
 `oxexcljzzemfenzogcnz` as recorded migrations.
 
+Mobile-side mirror: `docs/WEB-BACKEND-SYNC.md` in the mobile repo carries the
+same information for that repo's agents, referenced from its board tasks.
+Whoever changes the shared Supabase schema updates BOTH files — the database
+is the only contract the two repos share.
+
 The web admin console now runs live moderation (reports, bans, audit log)
 against the shared backend. The mobile app must align with the following
 schema and behavior changes so both clients stay in sync.
