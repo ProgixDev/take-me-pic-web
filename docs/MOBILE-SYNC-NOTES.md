@@ -139,7 +139,21 @@ reviewed_by  uuid null references profiles(id) on delete set null
 - New audit actions: `post_visibility_update`, `comment_visibility_update`,
   `spot_review`.
 
-## 7. Open items to coordinate (not yet done anywhere)
+## 7. Karma ledger staff read (TASK-007-2, added 2026-06-12)
+
+Policy `karma_ledger_staff_read` grants staff `SELECT` on the full
+`karma_ledger` (ADR-0004 pattern). Self-read for regular users is unchanged.
+
+- **Mobile action:** none. Listed for awareness: staff now see every ledger
+  entry (delta, reason, linked help request) in the admin console, so keep
+  `karma_ledger.reason` values stable and machine-readable. The admin UI
+  labels `rating` (written by mobile's `submit_rating`, migration 0008) and
+  shows unknown reasons raw.
+- Ratings (stars + comments) are displayed read-only on the admin user
+  detail and session review screens. Rating comments are still NOT a report
+  target — coordinate before exposing a "report this rating" flow.
+
+## 8. Open items to coordinate (not yet done anywhere)
 
 1. **`profiles.is_banned` is not maintained by the new RPCs.** Decide: either
    the RPCs also flip it (one more statement in the same transaction), or

@@ -3,7 +3,7 @@
 Project: Take Me Pic Web/Admin
 Current focus: Supabase-connected admin operations and staff safety workflows
 Current milestone: Web Phase 1 - Admin trust and safety foundation
-Updated: 2026-06-11
+Updated: 2026-06-12
 
 Source board: `/Users/macbookpro/Documents/Progix/take-my-pic/.agent-board`
 Adapted for this Next.js web/admin repo.
@@ -28,16 +28,17 @@ Adapted for this Next.js web/admin repo.
 | TASK-005 | Wire users, roles, and verification admin views | Done | Agent | P1 |
 | TASK-006 | Wire request/session support inspection | Done | Agent | P1 |
 | TASK-007 | Wire community and spots moderation | Done | Agent | P1 |
-| TASK-007-2 | Read-only karma ledger and ratings inspection | Backlog | Agent | P1 |
+| TASK-007-2 | Read-only karma ledger and ratings inspection | Done | Agent | P1 |
 | TASK-008 | Wire notifications and content operations | Backlog | Agent | P1 |
 | TASK-009 | Add admin analytics from Supabase views/RPCs | Backlog | Agent | P2 |
 | TASK-010 | Prepare premium, payments, and booking operations | Backlog | Agent | P2 |
 
 ## Recommended Start
 
-Start with TASK-007-2: it pairs with the karma leaderboard and rating
-feature being built next in the mobile repo, so both clients land on the
-same `karma_ledger`/`ratings` semantics. Then TASK-008. TASK-001 through TASK-007 are done: moderation reads
+Start with TASK-008. TASK-007-2 is done: staff read any user's karma ledger
+under `karma_ledger_staff_read`, the user detail has a Réputation tab, and
+request/session review shows exchanged ratings — aligned with the mobile
+`submit_rating` RPC (mobile migration 0008, reason `rating`, delta +stars). TASK-001 through TASK-007 are done: moderation reads
 and mutations, users/roles/verification views, request/session support
 inspection, and community/spots moderation all run live against Supabase.
 Community content uses audited soft-hide (ADR-0005), spots have a
