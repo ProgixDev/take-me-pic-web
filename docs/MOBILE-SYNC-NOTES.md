@@ -153,7 +153,24 @@ Policy `karma_ledger_staff_read` grants staff `SELECT` on the full
   detail and session review screens. Rating comments are still NOT a report
   target — coordinate before exposing a "report this rating" flow.
 
-## 8. Open items to coordinate (not yet done anywhere)
+## 8. Staff notification operations (web TASK-008, added 2026-06-12)
+
+- Policy `notifications_staff_read`: staff read every user's `notifications`
+  rows in the admin console (bodies are generated, non-sensitive text per
+  mobile 0009's design). Self-access for regular users is unchanged.
+- New RPC `admin_send_notification(target_user_id, message, push_title)` —
+  staff-only, audited (`notification_send`), single-target. It calls
+  `private.notify_user` (mobile 0009), so the recipient gets a normal
+  in-app row with `kind = 'system'` and `data = {"type": "admin_message"}`
+  plus a push on registered devices.
+- **Mobile action:** make the notification tap handler tolerate the
+  `admin_message` data type (no routing target — degrade to the
+  notifications list, never crash). The current handler's "unknown type →
+  list" fallback should already cover it; confirm.
+- New RPC `admin_push_token_stats()` returns per-platform device/user counts
+  only — raw Expo tokens are never exposed to the admin.
+
+## 9. Open items to coordinate (not yet done anywhere)
 
 1. **`profiles.is_banned` is not maintained by the new RPCs.** Decide: either
    the RPCs also flip it (one more statement in the same transaction), or
