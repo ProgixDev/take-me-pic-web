@@ -102,6 +102,17 @@ export default function RetentionPage() {
         </>
       }
     >
+      {/* Documented gap (TASK-009, ADR-0008): retention/cohorts need a
+          per-user activity-event log that doesn't exist in the backend. */}
+      <div className="mb-6 p-3 bg-gold-light/15 border-[1.5px] border-dashed border-gold-deep/40 rounded-[4px]">
+        <p className="font-[family-name:var(--font-serif)] text-[13px] text-ink">
+          <strong>Aperçu local</strong> — calculer la rétention et les cohortes demande un journal
+          d'activité par utilisateur (« actif en semaine N après inscription ») qui n'existe pas
+          encore côté backend (ADR-0008). Les visuels ci-dessous sont des données d'exemple ;
+          l'écran Engagement montre les compteurs d'événements réels.
+        </p>
+      </div>
+
       {/* KPI StatCards — churn */}
       <section className="grid grid-cols-2 sm:grid-cols-4 gap-3 mb-8 stagger">
         <StatCard
