@@ -170,7 +170,19 @@ Policy `karma_ledger_staff_read` grants staff `SELECT` on the full
 - New RPC `admin_push_token_stats()` returns per-platform device/user counts
   only — raw Expo tokens are never exposed to the admin.
 
-## 9. Open items to coordinate (not yet done anywhere)
+## 9. Admin analytics RPC (web TASK-009, added 2026-06-12)
+
+`admin_analytics_overview()` — staff-only SECURITY DEFINER, returns
+cross-table aggregates as one jsonb document (ADR-0008). It counts rows in
+`messages`, `bookings`, and `subscriptions` (tables staff cannot read
+directly) but exposes counts/sums only — no message content, no tokens.
+
+- **Mobile action:** none. Listed so nobody mistakes it for a broadened read
+  policy. If mobile ever adds an activity-event log (needed for real
+  retention/DAU metrics) or moves subscription pricing into the DB, tell the
+  web side — both are documented analytics gaps.
+
+## 10. Open items to coordinate (not yet done anywhere)
 
 1. **`profiles.is_banned` is not maintained by the new RPCs.** Decide: either
    the RPCs also flip it (one more statement in the same transaction), or

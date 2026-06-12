@@ -30,17 +30,17 @@ Adapted for this Next.js web/admin repo.
 | TASK-007 | Wire community and spots moderation | Done | Agent | P1 |
 | TASK-007-2 | Read-only karma ledger and ratings inspection | Done | Agent | P1 |
 | TASK-008 | Wire notifications and content operations | Done | Agent | P1 |
-| TASK-009 | Add admin analytics from Supabase views/RPCs | Backlog | Agent | P2 |
+| TASK-009 | Add admin analytics from Supabase views/RPCs | Done | Agent | P2 |
 | TASK-010 | Prepare premium, payments, and booking operations | Backlog | Agent | P2 |
 
 ## Recommended Start
 
-Start with TASK-009 (admin analytics). TASK-008 is done: the notifications
-center reads live rows with aggregate push-device stats, staff send
-single-target system notifications through the audited
-`admin_send_notification` boundary (ADR-0007, reusing mobile 0009's
-`private.notify_user`), the manual reads `framing_tips`, and the
-templates/segments/e-mail/CMS gaps are documented on their screens. TASK-001 through TASK-007 are done: moderation reads
+Start with TASK-010 (premium, payments, and booking operations) — the last
+open task. TASK-009 is done: five analytics screens read live aggregates
+from the single staff-checked `admin_analytics_overview()` RPC (ADR-0008);
+retention/cohorts (no activity-event log) and MRR/ARPU (pricing lives in
+RevenueCat) are documented gaps. Coordinate TASK-010 with the mobile repo's
+TASK-014 (premium entitlements foundation). TASK-001 through TASK-007 are done: moderation reads
 and mutations, users/roles/verification views, request/session support
 inspection, and community/spots moderation all run live against Supabase.
 Community content uses audited soft-hide (ADR-0005), spots have a
