@@ -161,6 +161,16 @@ export default function NotificationTemplatesPage() {
         </Button>
       }
     >
+      {/* Documented backend boundary (TASK-008): no templates table exists yet. */}
+      <div className="mb-4 p-3 bg-gold-light/15 border-[1.5px] border-dashed border-gold-deep/40 rounded-[4px]">
+        <p className="font-[family-name:var(--font-serif)] text-[13px] text-ink">
+          <strong>Aperçu local</strong> — ces modèles ne sont pas encore stockés côté backend
+          (aucune table dédiée). L'envoi réel passe par la frontière auditée
+          «&nbsp;Nouvelle notification&nbsp;» (envoi individuel, ADR-0007) ; les modifications
+          faites ici ne sont pas persistées.
+        </p>
+      </div>
+
       <p className="font-[family-name:var(--font-serif)] italic text-ink-faded text-[14px] mb-6 max-w-2xl">
         Ces modèles pré-remplis accélèrent la création de notifications. Les variables entre{" "}
         <code className="font-[family-name:var(--font-mono)] text-[12px] bg-paper-warm/80 px-1 py-0.5 rounded">
