@@ -91,6 +91,17 @@ export default function GuidesLibraryPage() {
         </Button>
       }
     >
+      {/* CMS gap documented (TASK-008): help/blog content lives in the site
+          code and i18n files — there are no backend tables for it. The only
+          live content table is framing_tips (admin: /admin/content/manual). */}
+      <div className="mb-4 p-3 bg-gold-light/15 border-[1.5px] border-dashed border-gold-deep/40 rounded-[4px]">
+        <p className="font-[family-name:var(--font-serif)] text-[13px] text-ink">
+          <strong>Aperçu local</strong> — guides, centre d'aide et blog vivent dans le code du site
+          (pas de tables CMS côté backend). Seul le «&nbsp;Manuel du voyageur&nbsp;» est branché sur
+          du contenu live. Un vrai CMS reste à décider.
+        </p>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard label="Contenus total" value={totalContent} tone="ink" icon={<BookOpen size={18} />} />

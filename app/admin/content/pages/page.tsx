@@ -187,6 +187,16 @@ export default function StaticPagesPage() {
         </Button>
       }
     >
+      {/* CMS gap documented (TASK-008): marketing/legal pages are Next.js
+          routes + i18n files, not database rows. */}
+      <div className="mb-4 p-3 bg-gold-light/15 border-[1.5px] border-dashed border-gold-deep/40 rounded-[4px]">
+        <p className="font-[family-name:var(--font-serif)] text-[13px] text-ink">
+          <strong>Aperçu local</strong> — ces pages sont des routes Next.js et des fichiers i18n,
+          pas des enregistrements backend. Les modifier passe par le code du site ; un CMS dédié
+          reste à décider.
+        </p>
+      </div>
+
       {/* Stats */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
         <StatCard
