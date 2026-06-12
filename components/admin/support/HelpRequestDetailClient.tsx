@@ -1,9 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { MessageSquare, Flag, Users as UsersIcon, Clock } from "lucide-react";
+import { MessageSquare, Flag, Users as UsersIcon, Clock, Star } from "lucide-react";
 import { AdminPage } from "@/components/admin/AdminPage";
 import { Avatar, Badge, PaperCard, Stamp } from "@/components/ui";
+import type { ModerationQueryResult } from "@/lib/admin/moderation";
+import type { RatingEntry } from "@/lib/admin/reputation";
 import type { HelpRequestDetail } from "@/lib/admin/support";
 import { STATUS_LABEL, STATUS_TONE, formatDateTime } from "@/components/admin/support/status";
 
@@ -39,12 +41,69 @@ function ParticipantCard({
   );
 }
 
+function starsLabel(stars: number) {
+  return "★".repeat(stars) + "☆".repeat(Math.max(0, 5 - stars));
+}
+
+function SessionRatingsCard({ ratings }: { ratings: ModerationQueryResult<RatingEntry[]> }) {
+  return (
+    <PaperCard shadow="soft" className="p-5 lg:col-span-2">
+      <div className="flex items-center gap-2 mb-4">
+        <Star size={16} className="text-gold-deep" />
+        <h3 className="font-[family-name:var(--font-serif)] font-bold text-lg">Notes échangées</h3>
+      </div>
+      {ratings.kind !== "ok" ? (
+        <p className="font-[family-name:var(--font-serif)] text-[14px] text-ink-faded">
+          {ratings.kind === "error"
+            ? ratings.message
+            : "Les notes de cette session n'ont pas pu être chargées."}
+        </p>
+      ) : ratings.data.length === 0 ? (
+        <p className="font-[family-name:var(--font-serif)] italic text-ink-faded text-[14px]">
+          Aucune note échangée sur cette session.
+        </p>
+      ) : (
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          {ratings.data.map((rating) => (
+            <div
+              key={rating.id}
+              className="flex items-start gap-3 p-3 bg-paper-warm/40 rounded-[4px] border-[1.5px] border-[var(--ink-line)]"
+            >
+              <Avatar src={rating.rater?.avatarUrl ?? undefined} size={32} />
+              <div className="min-w-0">
+                <p className="font-[family-name:var(--font-serif)] text-[13px]">
+                  <strong>{rating.rater?.username ?? "profil supprimé"}</strong>
+                  <span className="text-ink-faded"> → </span>
+                  <strong>{rating.ratee?.username ?? "profil supprimé"}</strong>
+                </p>
+                <p className="text-gold-deep font-bold font-[family-name:var(--font-serif)] text-[14px]">
+                  {starsLabel(rating.stars)}
+                </p>
+                {rating.comment && (
+                  <p className="font-[family-name:var(--font-serif)] italic text-[13px] mt-1">
+                    « {rating.comment} »
+                  </p>
+                )}
+                <p className="font-[family-name:var(--font-type)] text-[11px] text-ink-faded mt-1">
+                  {formatDateTime(rating.createdAt)}
+                </p>
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </PaperCard>
+  );
+}
+
 export function HelpRequestDetailClient({
   detail,
   variant,
+  ratings,
 }: {
   detail: HelpRequestDetail;
   variant: "request" | "session";
+  ratings: ModerationQueryResult<RatingEntry[]>;
 }) {
   const isSession = variant === "session";
   const title = isSession ? `Session #${detail.id}` : `Demande #${detail.id}`;
@@ -192,6 +251,8 @@ export function HelpRequestDetailClient({
             Métadonnées uniquement — le contenu des messages et les photos de session ne sont pas exposés.
           </p>
         </PaperCard>
+
+        <SessionRatingsCard ratings={ratings} />
       </div>
     </AdminPage>
   );

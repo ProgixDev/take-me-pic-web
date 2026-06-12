@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { ShieldOff, ShieldCheck, Star, Camera, Users, Heart, MapPin } from "lucide-react";
 import { AdminPage } from "@/components/admin/AdminPage";
 import {
@@ -18,7 +19,10 @@ import {
   fmtNum,
 } from "@/components/ui";
 import { banUser, unbanUser } from "@/lib/admin/moderation-actions";
+import type { ModerationQueryResult } from "@/lib/admin/moderation";
+import type { RatingEntry, UserReputation } from "@/lib/admin/reputation";
 import type { UserDetailModel } from "@/lib/admin/users";
+import { formatDateTime } from "@/components/admin/support/status";
 
 const STATUS_LABEL: Record<UserDetailModel["status"], string> = {
   active: "actif",
@@ -38,7 +42,150 @@ function actionErrorMessage(result: { kind: string; message?: string }) {
   return result.message ?? "L'action de modération a échoué.";
 }
 
-export function UserDetailClient({ user }: { user: UserDetailModel }) {
+// Reasons written by backend RPCs (mobile migration 0008: submit_rating → 'rating').
+const KARMA_REASON_LABEL: Record<string, string> = {
+  rating: "Note de session",
+};
+
+function starsLabel(stars: number) {
+  return "★".repeat(stars) + "☆".repeat(Math.max(0, 5 - stars));
+}
+
+function RatingRow({ rating, direction }: { rating: RatingEntry; direction: "received" | "given" }) {
+  const counterpart = direction === "received" ? rating.rater : rating.ratee;
+
+  return (
+    <div className="flex items-start gap-4 p-3 bg-paper-warm/50 rounded-[4px] border-[1.5px] border-[var(--ink-line)]">
+      <Avatar src={counterpart?.avatarUrl ?? undefined} size={32} />
+      <div className="flex-1 min-w-0">
+        <p className="font-[family-name:var(--font-serif)] text-[14px]">
+          <span className="text-gold-deep font-bold">{starsLabel(rating.stars)}</span>
+          <span className="text-ink-faded text-[12px] ml-2">
+            {direction === "received" ? "par" : "pour"}{" "}
+            {counterpart ? counterpart.username : "profil supprimé"}
+          </span>
+        </p>
+        {rating.comment && (
+          <p className="font-[family-name:var(--font-serif)] italic text-[13px] mt-1">« {rating.comment} »</p>
+        )}
+        <p className="font-[family-name:var(--font-type)] text-[11px] text-ink-faded mt-1">
+          <Link href={`/admin/sessions/${rating.helpRequestId}`} className="hover:underline text-stamp-blue">
+            Session #{rating.helpRequestId}
+          </Link>
+          {" · "}
+          {formatDateTime(rating.createdAt)}
+        </p>
+      </div>
+    </div>
+  );
+}
+
+function ReputationTab({ reputation }: { reputation: ModerationQueryResult<UserReputation> }) {
+  if (reputation.kind !== "ok") {
+    return (
+      <PaperCard shadow="soft" className="p-5">
+        <p className="font-[family-name:var(--font-serif)] text-[14px] text-ink-faded">
+          {reputation.kind === "error"
+            ? reputation.message
+            : reputation.kind === "unauthorized"
+            ? "Ce compte n'a pas les droits staff pour consulter la réputation."
+            : "Session Supabase manquante. Reconnecte-toi."}
+        </p>
+      </PaperCard>
+    );
+  }
+
+  const { ledger, ratingsReceived, ratingsGiven } = reputation.data;
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <PaperCard shadow="gold" className="p-5">
+        <h3 className="font-[family-name:var(--font-serif)] font-bold text-lg mb-4">Journal de karma</h3>
+        {ledger.length === 0 ? (
+          <p className="font-[family-name:var(--font-serif)] italic text-ink-faded">
+            Aucune entrée de karma pour cet utilisateur.
+          </p>
+        ) : (
+          <div className="space-y-2">
+            {ledger.map((entry) => (
+              <div
+                key={entry.id}
+                className="flex items-center justify-between gap-3 p-2.5 bg-paper-warm/40 rounded-[4px]"
+              >
+                <div className="min-w-0">
+                  <span className="font-[family-name:var(--font-serif)] text-[13px] font-semibold">
+                    {KARMA_REASON_LABEL[entry.reason] ?? entry.reason}
+                  </span>
+                  <span className="font-[family-name:var(--font-type)] text-[11px] text-ink-faded block">
+                    {entry.helpRequestId !== null ? (
+                      <>
+                        <Link
+                          href={`/admin/sessions/${entry.helpRequestId}`}
+                          className="hover:underline text-stamp-blue"
+                        >
+                          Session #{entry.helpRequestId}
+                        </Link>
+                        {" · "}
+                      </>
+                    ) : null}
+                    {formatDateTime(entry.createdAt)}
+                  </span>
+                </div>
+                <span
+                  className={`font-[family-name:var(--font-serif)] font-bold text-[16px] shrink-0 ${
+                    entry.delta >= 0 ? "text-stamp-green" : "text-stamp-red"
+                  }`}
+                >
+                  {entry.delta >= 0 ? `+${entry.delta}` : entry.delta}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </PaperCard>
+
+      <div className="flex flex-col gap-5">
+        <PaperCard shadow="soft" className="p-5">
+          <h3 className="font-[family-name:var(--font-serif)] font-bold text-lg mb-4">
+            Notes reçues ({ratingsReceived.length})
+          </h3>
+          {ratingsReceived.length === 0 ? (
+            <p className="font-[family-name:var(--font-serif)] italic text-ink-faded">Aucune note reçue.</p>
+          ) : (
+            <div className="space-y-3">
+              {ratingsReceived.map((rating) => (
+                <RatingRow key={rating.id} rating={rating} direction="received" />
+              ))}
+            </div>
+          )}
+        </PaperCard>
+
+        <PaperCard shadow="soft" className="p-5">
+          <h3 className="font-[family-name:var(--font-serif)] font-bold text-lg mb-4">
+            Notes données ({ratingsGiven.length})
+          </h3>
+          {ratingsGiven.length === 0 ? (
+            <p className="font-[family-name:var(--font-serif)] italic text-ink-faded">Aucune note donnée.</p>
+          ) : (
+            <div className="space-y-3">
+              {ratingsGiven.map((rating) => (
+                <RatingRow key={rating.id} rating={rating} direction="given" />
+              ))}
+            </div>
+          )}
+        </PaperCard>
+      </div>
+    </div>
+  );
+}
+
+export function UserDetailClient({
+  user,
+  reputation,
+}: {
+  user: UserDetailModel;
+  reputation: ModerationQueryResult<UserReputation>;
+}) {
   const toast = useToast();
   const [tab, setTab] = useState("profil");
   const [banOpen, setBanOpen] = useState(false);
@@ -198,6 +345,7 @@ export function UserDetailClient({ user }: { user: UserDetailModel }) {
       <Tabs
         tabs={[
           { key: "profil", label: "Profil" },
+          { key: "reputation", label: "Réputation" },
           { key: "signalements", label: `Signalements (${user.reports.length})` },
         ]}
         value={tab}
@@ -229,6 +377,8 @@ export function UserDetailClient({ user }: { user: UserDetailModel }) {
           </div>
         </PaperCard>
       )}
+
+      {tab === "reputation" && <ReputationTab reputation={reputation} />}
 
       {tab === "signalements" && (
         <PaperCard shadow="red" className="p-5">
