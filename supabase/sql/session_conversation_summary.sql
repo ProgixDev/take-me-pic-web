@@ -60,43 +60,52 @@ begin
     from public.help_requests hr
     where hr.id = target_help_request_id
   ),
-  target_conversation as (
-    select c.id
-    from public.conversations c
-    where c.help_request_id = target_help_request_id
-    order by c.created_at desc
-    limit 1
+  -- Resolve by the request's participant pair, NOT
+  -- conversations.help_request_id: mobile migration 0015 made conversations
+  -- per-pair and re-points that column at the latest accepted request, so it no
+  -- longer marks the per-session link (ADR-0009). Legacy pre-0015 rows left
+  -- several conversations per pair; merge activity across all of them to match
+  -- the mobile merged-history view, and return the latest as the canonical id.
+  pair_conversations as (
+    select cp1.conversation_id as id
+    from target_request tr
+    join public.conversation_participants cp1 on cp1.user_id = tr.requester_id
+    join public.conversation_participants cp2
+      on cp2.conversation_id = cp1.conversation_id
+     and cp2.user_id = tr.helper_id
+  ),
+  canonical_conversation as (
+    select max(id) as id from pair_conversations
   ),
   message_activity as (
     select
       count(m.id)::integer as message_count,
       min(m.created_at) as first_message_at,
       max(m.created_at) as last_message_at
-    from target_conversation tc
-    left join public.messages m on m.conversation_id = tc.id
+    from public.messages m
+    where m.conversation_id in (select id from pair_conversations)
   ),
   participant_activity as (
-    select count(cp.user_id)::integer as participant_count
-    from target_conversation tc
-    left join public.conversation_participants cp on cp.conversation_id = tc.id
+    select count(distinct cp.user_id)::integer as participant_count
+    from public.conversation_participants cp
+    where cp.conversation_id in (select id from pair_conversations)
   ),
   report_signal as (
     select count(distinct r.id)::integer as report_count
     from public.reports r
-    left join target_conversation tc on true
     where r.help_request_id = target_help_request_id
-       or r.conversation_id = tc.id
+       or r.conversation_id in (select id from pair_conversations)
        or exists (
          select 1
          from public.messages reported_message
          where reported_message.id = r.message_id
-           and reported_message.conversation_id = tc.id
+           and reported_message.conversation_id in (select id from pair_conversations)
        )
   )
   select
     tr.id as help_request_id,
-    tc.id as conversation_id,
-    case when tc.id is null then 'not_started' else 'active' end as status,
+    cc.id as conversation_id,
+    case when cc.id is null then 'not_started' else 'active' end as status,
     array_remove(array[
       'requester',
       case when tr.helper_id is null then null else 'helper' end
@@ -107,7 +116,7 @@ begin
     ma.last_message_at,
     coalesce(rs.report_count, 0) as report_count
   from target_request tr
-  left join target_conversation tc on true
+  left join canonical_conversation cc on true
   left join message_activity ma on true
   left join participant_activity pa on true
   left join report_signal rs on true;

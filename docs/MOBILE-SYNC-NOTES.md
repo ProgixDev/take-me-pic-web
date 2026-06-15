@@ -200,15 +200,17 @@ dedicated mobile→web sync file, so they are recorded here from a review pass.
   doesn't subscribe to realtime.
 - **0015 `accept_help_request` reuses ONE conversation per user-pair** and
   re-points `conversations.help_request_id` at the latest accepted request.
-  **This breaks the anchor in the web `get_session_conversation_summary` RPC**
-  (TASK-006): it resolves the conversation by `conversations.help_request_id =
-  target_help_request_id`, so after 0015 only the pair's latest session
-  resolves a conversation — older sessions show "no conversation yet," and the
-  latest over-/under-counts because messages are scattered across the pair's
-  legacy conversation rows (pre-0015 each accept created a new one; mobile
-  merges them on read). Live data already has a pair with 7 requests across 4
-  message-bearing conversations. Tracked as open item 5 — needs a joint
-  decision before the web RPC is changed.
+  This broke the anchor in the web `get_session_conversation_summary` RPC
+  (TASK-006). **Fixed 2026-06-15 (ADR-0009):** the RPC now resolves the
+  conversation by the request's participant pair and merges message/report
+  activity across all of the pair's conversations, returning the latest as the
+  canonical id. Forward-compatible with a future mobile legacy-conversation
+  backfill.
+- **0017 `submit_rating` now maintains `profiles.rating`** = `round(avg(stars),
+  2)` over the ratee's `ratings` (was always 0.00 before; existing profiles
+  backfilled). The admin user views and reputation tab read `profiles.rating`,
+  so the ★ is now live. Treat it as derived from `ratings`; the web admin only
+  reads it (no admin rating edit exists), so no action — awareness only.
 
 ## 11. Open items to coordinate (not yet done anywhere)
 
@@ -228,10 +230,9 @@ dedicated mobile→web sync file, so they are recorded here from a review pass.
    accurate (ADR-0002).
 4. **Appeals**: `bans.appeal_status` exists and the web shows it read-only;
    no flow writes it yet on either client.
-5. **Session conversation summary anchor (regression from 0015).** Decide the
-   web semantics: resolve the pair's conversation by participant pair (not the
-   re-pointed `help_request_id`), and whether message activity should be the
-   latest thread only or merged across the pair's legacy conversations (to
-   match the mobile merged-history view). A mobile-side backfill that merges
-   legacy per-pair conversations into one row would let the web keep a simple
-   anchor. No web change applied yet.
+5. ~~**Session conversation summary anchor (regression from 0015).**~~
+   **RESOLVED 2026-06-15 (ADR-0009):** web RPC re-anchored by participant pair
+   with activity merged across the pair's conversations. Optional follow-up
+   still open on the mobile side: a backfill merging legacy per-pair
+   conversations into one row (cosmetic — the web fix already handles the
+   scattered rows correctly).
