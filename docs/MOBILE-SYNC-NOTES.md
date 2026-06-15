@@ -182,17 +182,56 @@ directly) but exposes counts/sums only — no message content, no tokens.
   retention/DAU metrics) or moves subscription pricing into the DB, tell the
   web side — both are documented analytics gaps.
 
-## 10. Open items to coordinate (not yet done anywhere)
+## 10. Inbound mobile changes affecting the admin (reviewed 2026-06-15)
 
-1. **`profiles.is_banned` is not maintained by the new RPCs.** Decide: either
-   the RPCs also flip it (one more statement in the same transaction), or
-   mobile derives ban state from `bans` directly. Until decided, the flag
-   and the `bans` table can disagree.
-2. **Banned-user enforcement on the mobile side** (block session requests /
-   posting for users with an active ban) — needs an RLS predicate or app
-   check in mobile; nothing enforces it today besides UI.
+Mobile shipped migrations 0010–0016. These were made by the mobile repo, not
+the web side, but they touch shared behavior the admin depends on. There is no
+dedicated mobile→web sync file, so they are recorded here from a review pass.
+
+- **0010 `my_ban_status()` + `find_available_helpers` (SECURITY DEFINER).**
+  Mobile now reads its own active ban from `bans` (expiry-based, not
+  `profiles.is_banned`) and excludes blocked/banned users from matching. This
+  partially closes open item 2 below.
+- **0011 staff excluded from helper search.** `find_available_helpers` now
+  skips any `user_roles` role `<> 'user'`, so staff/admin accounts never appear
+  as bookable helpers. No admin impact; noted for awareness.
+- **0014 / 0016 realtime publication populated** (`help_requests`, `messages`,
+  `presence`, with `replica identity full`). No admin impact — the console
+  doesn't subscribe to realtime.
+- **0015 `accept_help_request` reuses ONE conversation per user-pair** and
+  re-points `conversations.help_request_id` at the latest accepted request.
+  **This breaks the anchor in the web `get_session_conversation_summary` RPC**
+  (TASK-006): it resolves the conversation by `conversations.help_request_id =
+  target_help_request_id`, so after 0015 only the pair's latest session
+  resolves a conversation — older sessions show "no conversation yet," and the
+  latest over-/under-counts because messages are scattered across the pair's
+  legacy conversation rows (pre-0015 each accept created a new one; mobile
+  merges them on read). Live data already has a pair with 7 requests across 4
+  message-bearing conversations. Tracked as open item 5 — needs a joint
+  decision before the web RPC is changed.
+
+## 11. Open items to coordinate (not yet done anywhere)
+
+1. **`profiles.is_banned` is not maintained by the web ban RPCs**, yet mobile
+   `accept_help_request` (0015) still gates banned helpers on
+   `profiles.is_banned = true`. Consequence: a user banned via the web
+   (`admin_ban_user` writes `bans` only) is correctly reported by
+   `my_ban_status()` but is NOT blocked by `accept_help_request`'s stale-flag
+   check. Decide: web RPCs also set `profiles.is_banned`, or
+   `accept_help_request` switches to the expiry-based `bans` predicate. Until
+   then the flag and `bans` disagree on web-issued bans.
+2. **Banned-user enforcement on the mobile side** — partially done (0010
+   excludes banned users from matching and adds `my_ban_status()`); still no
+   RLS predicate blocking a banned user's own writes (posting, requesting).
 3. **Report creation UI on mobile** should adopt the new target columns
    (session/conversation/message) so the web "Report signal" counts are
    accurate (ADR-0002).
 4. **Appeals**: `bans.appeal_status` exists and the web shows it read-only;
    no flow writes it yet on either client.
+5. **Session conversation summary anchor (regression from 0015).** Decide the
+   web semantics: resolve the pair's conversation by participant pair (not the
+   re-pointed `help_request_id`), and whether message activity should be the
+   latest thread only or merged across the pair's legacy conversations (to
+   match the mobile merged-history view). A mobile-side backfill that merges
+   legacy per-pair conversations into one row would let the web keep a simple
+   anchor. No web change applied yet.
