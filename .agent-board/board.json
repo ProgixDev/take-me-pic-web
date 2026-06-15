@@ -123,6 +123,17 @@
       "blockedBy": [
         "TASK-002"
       ]
+    },
+    {
+      "id": "TASK-011",
+      "title": "Wire daily itinerary (\"programme du jour\") admin operations",
+      "status": "Backlog",
+      "priority": "P2",
+      "owner": "Agent",
+      "path": ".agent-board/tasks/TASK-011.md",
+      "blockedBy": [
+        "TASK-002"
+      ]
     }
   ]
 }

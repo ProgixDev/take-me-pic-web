@@ -3,7 +3,7 @@
 Project: Take Me Pic Web/Admin
 Current focus: Supabase-connected admin operations and staff safety workflows
 Current milestone: Web Phase 1 - Admin trust and safety foundation
-Updated: 2026-06-12
+Updated: 2026-06-15
 
 Source board: `/Users/macbookpro/Documents/Progix/take-my-pic/.agent-board`
 Adapted for this Next.js web/admin repo.
@@ -32,6 +32,7 @@ Adapted for this Next.js web/admin repo.
 | TASK-008 | Wire notifications and content operations | Done | Agent | P1 |
 | TASK-009 | Add admin analytics from Supabase views/RPCs | Done | Agent | P2 |
 | TASK-010 | Prepare premium, payments, and booking operations | Backlog | Agent | P2 |
+| TASK-011 | Wire daily itinerary ("programme du jour") admin operations | Backlog | Agent | P2 |
 
 ## Recommended Start
 
