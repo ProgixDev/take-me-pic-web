@@ -13,6 +13,12 @@ import {
   Stamp,
   useToast,
 } from "@/components/ui";
+import { createSpot } from "@/lib/admin/spots-actions";
+
+const ERROR_MESSAGES: Record<string, string> = {
+  unauthenticated: "Session expirée — reconnecte-toi.",
+  unauthorized: "Accès réservé au staff.",
+};
 
 export default function NewSpotPage() {
   const toast = useToast();
@@ -25,14 +31,31 @@ export default function NewSpotPage() {
   const [description, setDescription] = useState("");
   const [heroUrl, setHeroUrl] = useState("");
   const [created, setCreated] = useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const handleCreate = () => {
+  const handleCreate = async () => {
     if (!name.trim()) {
       toast.push("Le nom du spot est obligatoire.", "err");
       return;
     }
-    setCreated(true);
-    toast.push(`Spot « ${name} » créé et soumis à validation.`, "ok");
+    setSaving(true);
+    const result = await createSpot({
+      name,
+      city,
+      bestTime,
+      heroUrl,
+    });
+    setSaving(false);
+
+    if (result.kind === "ok") {
+      setCreated(true);
+      toast.push(`Spot « ${name} » créé et soumis à validation.`, "ok");
+      return;
+    }
+    toast.push(
+      result.kind === "error" ? result.message : ERROR_MESSAGES[result.kind],
+      "err",
+    );
   };
 
   if (created) {
@@ -97,8 +120,9 @@ export default function NewSpotPage() {
             size="sm"
             icon={<Plus size={14} />}
             onClick={handleCreate}
+            disabled={saving}
           >
-            Créer le spot
+            {saving ? "Création…" : "Créer le spot"}
           </Button>
         </div>
       }
@@ -203,8 +227,9 @@ export default function NewSpotPage() {
                 size="sm"
                 icon={<Plus size={14} />}
                 onClick={handleCreate}
+                disabled={saving}
               >
-                Créer le spot
+                {saving ? "Création…" : "Créer le spot"}
               </Button>
             </div>
           </PaperCard>
