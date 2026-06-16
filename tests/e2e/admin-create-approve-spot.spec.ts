@@ -13,9 +13,15 @@ test.describe("admin spot create + approve (mobile spots backend)", () => {
     const name = `[E2E] Spot ${Date.now()}`;
 
     // ── create → moderation queue ────────────────────────────────────────────
+    // The admin Input is a controlled component; .fill() can set the DOM value
+    // without firing React onChange in this app, so type real keystrokes.
     await page.goto("/admin/spots/new");
-    await page.getByPlaceholder(/Pont des Arts/).fill(name);
-    await page.getByPlaceholder(/Ex\. 19H/).fill("🌇 19H");
+    const nameField = page.getByPlaceholder(/Pont des Arts/);
+    await nameField.click();
+    await nameField.pressSequentially(name);
+    const bestTimeField = page.getByPlaceholder(/Ex\. 19H/);
+    await bestTimeField.click();
+    await bestTimeField.pressSequentially("19H");
     await page.getByRole("button", { name: "Créer le spot" }).first().click();
     await expect(page.getByText(`Spot « ${name} » créé !`)).toBeVisible({ timeout: 15000 });
 
