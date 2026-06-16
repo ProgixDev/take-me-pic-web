@@ -264,3 +264,17 @@ create unique index help_requests_one_active_per_requester
    group by 1 having count(*) > 1;`
 - Expiry is intentionally NOT in the index predicate (`now()` isn't IMMUTABLE);
   the app treats an expired `requested` row as inactive.
+
+## Sponsored campaigns (B2B) — 2026-06-17 (mobile TASK-020 + web admin)
+
+Mobile migration `0019_sponsored_campaigns.sql` adds `businesses` +
+`sponsored_campaigns` and three SECURITY DEFINER RPCs (`active_sponsored_spot_ids`,
+`admin_create_campaign`, `admin_list_campaigns`). The web admin gained
+`/admin/sponsored` (create + list campaigns via the admin RPCs) — see
+`lib/admin/campaigns-actions.ts` + `tests/e2e/admin-sponsored.spec.ts`.
+
+- Campaigns drive the mobile sponsored-spot badge (active campaign on a `spot_id`
+  → that spot shows "partenaire"). Eligibility = status 'active' AND now within
+  the window.
+- Tables are RLS-locked (no policies); only the RPCs touch them. Staff RPCs check
+  `private.is_staff()`.
