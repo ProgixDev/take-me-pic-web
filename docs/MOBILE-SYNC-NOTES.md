@@ -236,3 +236,31 @@ dedicated mobile→web sync file, so they are recorded here from a review pass.
    still open on the mobile side: a backfill merging legacy per-pair
    conversations into one row (cosmetic — the web fix already handles the
    scattered rows correctly).
+
+## Mobile-originated shared-schema change — 2026-06-16 (mobile TASK-011)
+
+**Mobile added a partial unique index on `help_requests`** (mobile migration
+`0018_one_active_request_per_requester.sql`):
+
+```
+create unique index help_requests_one_active_per_requester
+  on public.help_requests (requester_id)
+  where status in ('requested', 'accepted', 'in_session');
+```
+
+- Enforces **one active outgoing request per requester** so app resume is
+  unambiguous. A concurrent duplicate insert now fails with `23505`; the mobile
+  client catches it and surfaces the existing active request.
+- **Implications for web/admin:** any admin tooling or seed/test fixture that
+  creates `help_requests` for a user must not leave two rows in
+  `requested|accepted|in_session` for the same `requester_id` — the insert will
+  be rejected. Terminal states (`completed|rated|cancelled|expired`) are
+  unconstrained, so history is unaffected.
+- **Apply step (shared project `oxexcljzzemfenzogcnz`):** additive + reversible
+  (`drop index if exists help_requests_one_active_per_requester`). Pre-check for
+  existing violators before applying:
+  `select requester_id, count(*) from help_requests
+   where status in ('requested','accepted','in_session')
+   group by 1 having count(*) > 1;`
+- Expiry is intentionally NOT in the index predicate (`now()` isn't IMMUTABLE);
+  the app treats an expired `requested` row as inactive.
