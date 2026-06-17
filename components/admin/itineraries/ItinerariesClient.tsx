@@ -10,12 +10,11 @@ import {
   updateTemplate,
   deleteTemplate,
   getTemplateSteps,
-  STEP_KINDS,
   type TemplateRow,
   type StepInput,
-  type StepKind,
   type TemplateActionResult,
 } from "@/lib/admin/itinerary-templates-actions";
+import { STEP_KINDS, type StepKind } from "@/lib/admin/itinerary-step-kinds";
 
 const ERROR_MESSAGES: Record<string, string> = {
   unauthenticated: "Session expirée — reconnecte-toi.",

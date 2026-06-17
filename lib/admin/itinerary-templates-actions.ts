@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 
 import { getStaffSession } from "@/lib/admin/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { STEP_KINDS, type StepKind } from "@/lib/admin/itinerary-step-kinds";
 
 type StaffDenial = { kind: "unauthenticated" } | { kind: "unauthorized" };
 
@@ -11,11 +12,6 @@ export type TemplateActionResult =
   | { kind: "ok" }
   | StaffDenial
   | { kind: "error"; message: string };
-
-// Steps of an itinerary template. `kind` is the `itinerary_kind` enum.
-export type StepKind = "photo" | "coffee" | "ticket" | "walk" | "view";
-
-export const STEP_KINDS: StepKind[] = ["photo", "coffee", "ticket", "walk", "view"];
 
 export type StepInput = {
   timeLabel?: string | null;
