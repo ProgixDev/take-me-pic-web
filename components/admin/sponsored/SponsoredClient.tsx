@@ -23,6 +23,9 @@ export function SponsoredClient({ campaigns }: { campaigns: CampaignRow[] }) {
 
   const [businessName, setBusinessName] = useState("");
   const [spotId, setSpotId] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
+  const [radius, setRadius] = useState("");
   const [saving, setSaving] = useState(false);
 
   const handleCreate = async () => {
@@ -35,14 +38,35 @@ export function SponsoredClient({ campaigns }: { campaigns: CampaignRow[] }) {
       toast.push("L'ID du spot doit être un nombre.", "err");
       return;
     }
+    const parsedLat = lat.trim() ? Number(lat.trim()) : null;
+    const parsedLng = lng.trim() ? Number(lng.trim()) : null;
+    if ((parsedLat === null) !== (parsedLng === null)) {
+      toast.push("Latitude et longitude doivent être renseignées ensemble.", "err");
+      return;
+    }
+    if ((parsedLat !== null && !Number.isFinite(parsedLat)) || (parsedLng !== null && !Number.isFinite(parsedLng))) {
+      toast.push("Coordonnées invalides.", "err");
+      return;
+    }
+    const parsedRadius = radius.trim() ? Number(radius.trim()) : null;
+
     setSaving(true);
-    const result = await createCampaign({ businessName, spotId: parsedSpot });
+    const result = await createCampaign({
+      businessName,
+      spotId: parsedSpot,
+      targetLat: parsedLat,
+      targetLng: parsedLng,
+      radiusM: parsedRadius,
+    });
     setSaving(false);
 
     if (result.kind === "ok") {
       toast.push(`Campagne « ${businessName.trim()} » créée.`, "ok");
       setBusinessName("");
       setSpotId("");
+      setLat("");
+      setLng("");
+      setRadius("");
       router.refresh();
       return;
     }
@@ -68,6 +92,14 @@ export function SponsoredClient({ campaigns }: { campaigns: CampaignRow[] }) {
             <div className="flex flex-col gap-3">
               <Input label="Partenaire *" value={businessName} onChange={(e) => setBusinessName(e.target.value)} placeholder="Ex. Office de tourisme de Paris" />
               <Input label="ID du spot (optionnel)" value={spotId} onChange={(e) => setSpotId(e.target.value)} placeholder="Ex. 2" />
+              <div className="font-[family-name:var(--font-type)] text-[10px] uppercase tracking-[0.1em] text-ink-faded pt-1">
+                Ou ciblage géo (annonce)
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                <Input label="Latitude" value={lat} onChange={(e) => setLat(e.target.value)} placeholder="48.8578" />
+                <Input label="Longitude" value={lng} onChange={(e) => setLng(e.target.value)} placeholder="2.3622" />
+              </div>
+              <Input label="Rayon (m)" value={radius} onChange={(e) => setRadius(e.target.value)} placeholder="2000" />
               <p className="font-[family-name:var(--font-serif)] text-[12px] text-ink-faded">
                 Active immédiatement pour 30 jours. Le spot ciblé affichera le badge « partenaire » dans l'app.
               </p>
@@ -100,7 +132,7 @@ export function SponsoredClient({ campaigns }: { campaigns: CampaignRow[] }) {
                         {c.businessName}
                       </div>
                       <div className="font-[family-name:var(--font-type)] text-[12px] text-ink-faded truncate">
-                        {c.spotId ? `spot #${c.spotId}` : "ciblage géo"}
+                        {c.spotId ? `spot #${c.spotId}` : c.radiusM ? `géo · ${c.radiusM} m` : "ciblage géo"}
                         {" · "}
                         {fmtDate(c.startsAt)} → {fmtDate(c.endsAt)}
                       </div>
