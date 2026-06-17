@@ -4,7 +4,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, ShieldAlert, Camera, MessageSquare, MapPin, Award,
-  CreditCard, Crown, Ticket as TicketIcon, Heart, Bell, BookOpen, BarChart3,
+  CreditCard, Crown, Megaphone, Ticket as TicketIcon, Heart, Bell, BookOpen, BarChart3,
   LifeBuoy, ScrollText, Settings, Star,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
@@ -46,6 +46,7 @@ const GROUPS: { title: string; items: { href: string; label: string; icon: React
     title: "argent",
     items: [
       { href: "/admin/premium", label: "Abonnements", icon: Crown },
+      { href: "/admin/sponsored", label: "Sponsorisé", icon: Megaphone },
       { href: "/admin/payments", label: "Paiements", icon: CreditCard },
     ],
   },
