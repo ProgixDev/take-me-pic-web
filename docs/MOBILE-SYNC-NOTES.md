@@ -287,3 +287,19 @@ stripe_invoice_id + a `[starts_at, ends_at)` window) with `*_staff` RLS. So the
 admin writes campaigns DIRECTLY (staff RLS), lifecycle = the time window (no
 status). Mobile migration 0019 reduces to one SECURITY DEFINER read,
 `active_sponsored_spot_ids()` (window-based), since mobile can't read the table.
+
+## Bookings + Stripe webhook — 2026-06-17 (TASK-022)
+
+The `bookings` table (own-row RLS `bookings_self`, enum `pending|confirmed|
+cancelled|refunded`, `stripe_payment_intent`) is wired both sides:
+
+- **Mobile** creates a booking INTENT (status `pending`) and shows its status;
+  it never self-confirms.
+- **Web** owns the lifecycle via a Stripe **webhook** route
+  (`app/api/stripe/webhook/route.ts`): on a payment event it flips the matching
+  booking (by `stripe_payment_intent`) to confirmed/cancelled/refunded, **via the
+  service role** (server-only) since the update crosses users. Idempotent.
+- **Env (Vercel/server-only):** `SUPABASE_SERVICE_ROLE_KEY` is required by the
+  webhook; `WEBHOOK_TEST_SECRET` authorizes the e2e mock (prod will verify the
+  Stripe signature via `STRIPE_WEBHOOK_SECRET`). Booking commission stays
+  separate from Premium.
