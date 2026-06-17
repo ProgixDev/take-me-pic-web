@@ -5,7 +5,7 @@ import { usePathname } from "next/navigation";
 import {
   LayoutDashboard, Users, ShieldAlert, Camera, MessageSquare, MapPin, Award,
   CreditCard, Crown, Megaphone, Ticket as TicketIcon, Heart, Bell, BookOpen, BarChart3,
-  LifeBuoy, ScrollText, Settings, Star,
+  LifeBuoy, ScrollText, Settings, Star, Map,
 } from "lucide-react";
 import { cn } from "@/lib/cn";
 
@@ -38,6 +38,7 @@ const GROUPS: { title: string; items: { href: string; label: string; icon: React
     items: [
       { href: "/admin/community/posts", label: "Publications", icon: MessageSquare },
       { href: "/admin/spots", label: "Spots photo", icon: MapPin },
+      { href: "/admin/itineraries", label: "Itinéraires", icon: Map },
       { href: "/admin/karma", label: "Karma & badges", icon: Award },
       { href: "/admin/moderation", label: "Modération", icon: ShieldAlert },
     ],
