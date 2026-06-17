@@ -8,19 +8,17 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 type StaffDenial = { kind: "unauthenticated" } | { kind: "unauthorized" };
 
 export type CampaignActionResult =
-  | { kind: "ok"; id?: number }
+  | { kind: "ok" }
   | StaffDenial
   | { kind: "error"; message: string };
 
 export type CampaignRow = {
   id: number;
-  name: string;
   businessName: string;
   spotId: number | null;
-  city: string | null;
-  startsAt: string;
-  endsAt: string;
-  status: string;
+  startsAt: string | null;
+  endsAt: string | null;
+  budgetCents: number;
   isActive: boolean;
   createdAt: string;
 };
@@ -30,12 +28,11 @@ export type CampaignListResult =
   | StaffDenial
   | { kind: "error"; message: string };
 
-type RpcError = { code?: string; message?: string };
+type DbError = { code?: string; message?: string };
 
-function mapRpcError(error: RpcError, fallback: string): { kind: "unauthorized" } | { kind: "error"; message: string } {
+function mapDbError(error: DbError, fallback: string): { kind: "unauthorized" } | { kind: "error"; message: string } {
   console.error("[admin/campaigns-actions]", fallback, error.code ?? "", error.message ?? "");
   if (error.code === "42501") return { kind: "unauthorized" };
-  if (error.code === "P0001") return { kind: "error", message: error.message ?? fallback };
   return { kind: "error", message: fallback };
 }
 
@@ -46,37 +43,65 @@ async function requireStaff(): Promise<StaffDenial | null> {
   return null;
 }
 
-// Create a sponsored campaign (upserts the business by name). Lands as `active`
-// by default with a 30-day window so it immediately drives mobile sponsorship;
-// the window defaults are owned by the SECURITY DEFINER RPC.
+const DAY_MS = 86_400_000;
+
+function computeActive(startsAt: string | null, endsAt: string | null): boolean {
+  const now = Date.now();
+  const startedOk = !startsAt || new Date(startsAt).getTime() <= now;
+  const notEnded = !endsAt || new Date(endsAt).getTime() > now;
+  return startedOk && notEnded;
+}
+
+// Create a sponsored campaign. The `businesses` / `sponsored_campaigns` tables
+// already exist with a `*_staff` RLS policy, so staff write directly. A campaign
+// is "active" while now() is within its window; we default to a 30-day window
+// starting now so it drives mobile sponsorship immediately. Stripe billing
+// (budget_cents / invoice) is handled separately (TASK-022).
 export async function createCampaign(input: {
   businessName: string;
-  name: string;
   spotId?: number | null;
-  city?: string | null;
-  status?: string;
+  days?: number;
 }): Promise<CampaignActionResult> {
   const denied = await requireStaff();
   if (denied) return denied;
 
   const businessName = input.businessName?.trim();
-  const name = input.name?.trim();
-  if (!businessName || !name) {
-    return { kind: "error", message: "Nom du partenaire et nom de la campagne requis." };
-  }
+  if (!businessName) return { kind: "error", message: "Le nom du partenaire est requis." };
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("admin_create_campaign" as never, {
-    p_business_name: businessName,
-    p_name: name,
-    p_spot_id: input.spotId ?? null,
-    p_city: input.city?.trim() || null,
-    p_status: input.status ?? "active",
-  } as never);
 
-  if (error) return mapRpcError(error as RpcError, "Impossible de créer la campagne.");
+  // Upsert the business by name (case-insensitive).
+  const { data: existing, error: findErr } = await supabase
+    .from("businesses")
+    .select("id")
+    .ilike("name", businessName)
+    .limit(1)
+    .maybeSingle();
+  if (findErr) return mapDbError(findErr, "Impossible de charger le partenaire.");
+
+  let businessId = (existing as { id: number } | null)?.id;
+  if (!businessId) {
+    const { data: created, error: bizErr } = await supabase
+      .from("businesses")
+      .insert({ name: businessName })
+      .select("id")
+      .single();
+    if (bizErr) return mapDbError(bizErr, "Impossible de créer le partenaire.");
+    businessId = (created as { id: number }).id;
+  }
+
+  const startsAt = new Date();
+  const endsAt = new Date(startsAt.getTime() + (input.days ?? 30) * DAY_MS);
+  const { error } = await supabase.from("sponsored_campaigns").insert({
+    business_id: businessId,
+    spot_id: input.spotId ?? null,
+    starts_at: startsAt.toISOString(),
+    ends_at: endsAt.toISOString(),
+  });
+  if (error) return mapDbError(error, "Impossible de créer la campagne.");
+
   refresh();
-  return { kind: "ok", id: data as unknown as number };
+  return { kind: "ok" };
 }
 
 export async function getCampaigns(): Promise<CampaignListResult> {
@@ -84,20 +109,26 @@ export async function getCampaigns(): Promise<CampaignListResult> {
   if (denied) return denied;
 
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.rpc("admin_list_campaigns" as never);
-  if (error) return mapRpcError(error as RpcError, "Impossible de charger les campagnes.");
+  const { data, error } = await supabase
+    .from("sponsored_campaigns")
+    .select("id, spot_id, starts_at, ends_at, budget_cents, created_at, businesses(name)")
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) return mapDbError(error, "Impossible de charger les campagnes.");
 
-  const rows = ((data ?? []) as Record<string, unknown>[]).map((r) => ({
-    id: r.id as number,
-    name: r.name as string,
-    businessName: r.business_name as string,
-    spotId: (r.spot_id as number | null) ?? null,
-    city: (r.city as string | null) ?? null,
-    startsAt: r.starts_at as string,
-    endsAt: r.ends_at as string,
-    status: r.status as string,
-    isActive: Boolean(r.is_active),
-    createdAt: r.created_at as string,
-  }));
+  const rows = ((data ?? []) as Record<string, unknown>[]).map((r) => {
+    const business = r.businesses as { name?: string } | { name?: string }[] | null;
+    const businessName = Array.isArray(business) ? business[0]?.name : business?.name;
+    return {
+      id: r.id as number,
+      businessName: businessName ?? "—",
+      spotId: (r.spot_id as number | null) ?? null,
+      startsAt: (r.starts_at as string | null) ?? null,
+      endsAt: (r.ends_at as string | null) ?? null,
+      budgetCents: (r.budget_cents as number) ?? 0,
+      isActive: computeActive((r.starts_at as string | null) ?? null, (r.ends_at as string | null) ?? null),
+      createdAt: r.created_at as string,
+    };
+  });
   return { kind: "ok", data: rows };
 }

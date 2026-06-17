@@ -278,3 +278,12 @@ Mobile migration `0019_sponsored_campaigns.sql` adds `businesses` +
   the window.
 - Tables are RLS-locked (no policies); only the RPCs touch them. Staff RPCs check
   `private.is_staff()`.
+
+### Correction (2026-06-17): real sponsored_campaigns schema
+
+The `businesses` + `sponsored_campaigns` tables already existed (no status/name/
+city columns; `sponsored_campaigns` has spot_id/target_area/budget_cents/
+stripe_invoice_id + a `[starts_at, ends_at)` window) with `*_staff` RLS. So the
+admin writes campaigns DIRECTLY (staff RLS), lifecycle = the time window (no
+status). Mobile migration 0019 reduces to one SECURITY DEFINER read,
+`active_sponsored_spot_ids()` (window-based), since mobile can't read the table.
