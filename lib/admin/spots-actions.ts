@@ -55,6 +55,10 @@ export type SpotCreateInput = {
   bestTime?: string | null;
   heroUrl?: string | null;
   isSponsored?: boolean;
+  // Geo coordinates → written to the `location` geography(point,4326) so the spot
+  // can be surfaced by proximity. Both required together; omit for no location.
+  lat?: number | null;
+  lng?: number | null;
 };
 
 // Create a spot from the admin console. It lands in the moderation queue
@@ -70,6 +74,17 @@ export async function createSpot(input: SpotCreateInput): Promise<SpotActionResu
     return { kind: "error", message: "Le nom du spot est obligatoire." };
   }
 
+  // Coordinates are optional but, when present, must be a valid pair.
+  const { lat, lng } = input;
+  const hasLat = lat != null && Number.isFinite(lat);
+  const hasLng = lng != null && Number.isFinite(lng);
+  if (hasLat !== hasLng) {
+    return { kind: "error", message: "Latitude et longitude doivent être renseignées ensemble." };
+  }
+  if (hasLat && (lat! < -90 || lat! > 90 || lng! < -180 || lng! > 180)) {
+    return { kind: "error", message: "Coordonnées hors limites (lat ±90, lng ±180)." };
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData.user?.id;
@@ -77,12 +92,16 @@ export async function createSpot(input: SpotCreateInput): Promise<SpotActionResu
     return { kind: "unauthenticated" };
   }
 
+  // PostGIS geography point as EWKT (WKT order is lng lat); accepted by geography_in.
+  const location = hasLat ? `SRID=4326;POINT(${lng} ${lat})` : null;
+
   const { error } = await supabase.from("spots").insert({
     name,
     city: input.city?.trim() || null,
     best_time: input.bestTime?.trim() || null,
     hero_url: input.heroUrl?.trim() || null,
     is_sponsored: input.isSponsored ?? false,
+    location,
     created_by: uid,
   });
 

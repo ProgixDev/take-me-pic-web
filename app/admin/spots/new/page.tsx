@@ -30,6 +30,8 @@ export default function NewSpotPage() {
   const [bestTime, setBestTime] = useState("");
   const [description, setDescription] = useState("");
   const [heroUrl, setHeroUrl] = useState("");
+  const [lat, setLat] = useState("");
+  const [lng, setLng] = useState("");
   const [created, setCreated] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -38,12 +40,24 @@ export default function NewSpotPage() {
       toast.push("Le nom du spot est obligatoire.", "err");
       return;
     }
+    const hasLat = lat.trim() !== "";
+    const hasLng = lng.trim() !== "";
+    if (hasLat !== hasLng) {
+      toast.push("Renseigne latitude ET longitude (ou aucune).", "err");
+      return;
+    }
+    if (hasLat && (!Number.isFinite(Number(lat)) || !Number.isFinite(Number(lng)))) {
+      toast.push("Latitude/longitude invalides.", "err");
+      return;
+    }
     setSaving(true);
     const result = await createSpot({
       name,
       city,
       bestTime,
       heroUrl,
+      lat: hasLat ? Number(lat) : null,
+      lng: hasLng ? Number(lng) : null,
     });
     setSaving(false);
 
@@ -195,6 +209,28 @@ export default function NewSpotPage() {
                 onChange={(e) => setBestTime(e.target.value)}
                 placeholder="Ex. 19H, Heure dorée, 7H30…"
               />
+
+              <Input
+                label="Latitude"
+                value={lat}
+                onChange={(e) => setLat(e.target.value)}
+                placeholder="Ex. 48.8566"
+                inputMode="decimal"
+              />
+
+              <Input
+                label="Longitude"
+                value={lng}
+                onChange={(e) => setLng(e.target.value)}
+                placeholder="Ex. 2.3522"
+                inputMode="decimal"
+              />
+
+              <div className="sm:col-span-2">
+                <p className="font-[family-name:var(--font-serif)] text-[12px] text-ink-faded -mt-2 mb-3 pl-1">
+                  Coordonnées GPS du spot — utilisées pour l'afficher aux utilisateurs à proximité. Laisse vide si inconnu.
+                </p>
+              </div>
 
               <div className="sm:col-span-2">
                 <Input
