@@ -303,3 +303,15 @@ cancelled|refunded`, `stripe_payment_intent`) is wired both sides:
   webhook; `WEBHOOK_TEST_SECRET` authorizes the e2e mock (prod will verify the
   Stripe signature via `STRIPE_WEBHOOK_SECRET`). Booking commission stays
   separate from Premium.
+
+## Geo-targeted ads — 2026-06-17 (mobile TASK-021 + web admin)
+
+Geo ads reuse `sponsored_campaigns`: a campaign with `target_area` (geography
+point) + `target_radius_m` (no `spot_id`) is a geo ad. The admin `/admin/sponsored`
+form gained optional **lat/lng + rayon** fields → writes `target_area`
+(`SRID=4326;POINT(lng lat)`) + `target_radius_m` (direct staff write).
+
+- **Mobile** reads `active_geo_ads(lat, lng)` (mobile migration `0020`, SECURITY
+  DEFINER, PostGIS `st_dwithin`) and shows one ad slot on the map for
+  **non-Premium** users (entitlement-gated; ad-free Premium users never read).
+  Graceful: no RPC → no ads.
