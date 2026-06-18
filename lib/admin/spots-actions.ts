@@ -59,6 +59,11 @@ export type SpotCreateInput = {
   // can be surfaced by proximity. Both required together; omit for no location.
   lat?: number | null;
   lng?: number | null;
+  // Bookable experience tied to the spot (title + price in cents) → drives the
+  // mobile spot-detail "réserver" CTA. Title + price required when bookable.
+  bookable?: boolean;
+  bookingTitle?: string | null;
+  bookingPriceCents?: number | null;
 };
 
 // Create a spot from the admin console. It lands in the moderation queue
@@ -85,6 +90,19 @@ export async function createSpot(input: SpotCreateInput): Promise<SpotActionResu
     return { kind: "error", message: "Coordonnées hors limites (lat ±90, lng ±180)." };
   }
 
+  // A bookable spot needs a title + a positive price.
+  const bookable = input.bookable ?? false;
+  const bookingTitle = input.bookingTitle?.trim() || null;
+  const bookingPriceCents = input.bookingPriceCents ?? null;
+  if (bookable) {
+    if (!bookingTitle) {
+      return { kind: "error", message: "Un spot réservable doit avoir un intitulé d'expérience." };
+    }
+    if (bookingPriceCents == null || !Number.isFinite(bookingPriceCents) || bookingPriceCents <= 0) {
+      return { kind: "error", message: "Le prix de la réservation doit être un montant positif." };
+    }
+  }
+
   const supabase = await createSupabaseServerClient();
   const { data: userData } = await supabase.auth.getUser();
   const uid = userData.user?.id;
@@ -102,6 +120,9 @@ export async function createSpot(input: SpotCreateInput): Promise<SpotActionResu
     hero_url: input.heroUrl?.trim() || null,
     is_sponsored: input.isSponsored ?? false,
     location,
+    bookable,
+    booking_title: bookable ? bookingTitle : null,
+    booking_price_cents: bookable ? bookingPriceCents : null,
     created_by: uid,
   });
 

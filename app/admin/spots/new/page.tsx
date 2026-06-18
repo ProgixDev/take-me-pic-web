@@ -32,6 +32,9 @@ export default function NewSpotPage() {
   const [heroUrl, setHeroUrl] = useState("");
   const [lat, setLat] = useState("");
   const [lng, setLng] = useState("");
+  const [bookable, setBookable] = useState(false);
+  const [bookingTitle, setBookingTitle] = useState("");
+  const [bookingPrice, setBookingPrice] = useState("");
   const [created, setCreated] = useState(false);
   const [saving, setSaving] = useState(false);
 
@@ -50,6 +53,17 @@ export default function NewSpotPage() {
       toast.push("Latitude/longitude invalides.", "err");
       return;
     }
+    if (bookable) {
+      if (!bookingTitle.trim()) {
+        toast.push("Renseigne l'intitulé de l'expérience réservable.", "err");
+        return;
+      }
+      const price = Number(bookingPrice);
+      if (!bookingPrice.trim() || !Number.isFinite(price) || price <= 0) {
+        toast.push("Prix de réservation invalide (€).", "err");
+        return;
+      }
+    }
     setSaving(true);
     const result = await createSpot({
       name,
@@ -58,6 +72,9 @@ export default function NewSpotPage() {
       heroUrl,
       lat: hasLat ? Number(lat) : null,
       lng: hasLng ? Number(lng) : null,
+      bookable,
+      bookingTitle: bookable ? bookingTitle : null,
+      bookingPriceCents: bookable ? Math.round(Number(bookingPrice) * 100) : null,
     });
     setSaving(false);
 
@@ -231,6 +248,42 @@ export default function NewSpotPage() {
                   Coordonnées GPS du spot — utilisées pour l'afficher aux utilisateurs à proximité. Laisse vide si inconnu.
                 </p>
               </div>
+
+              {/* Bookable experience → drives the mobile spot-detail "réserver" CTA */}
+              <div className="sm:col-span-2 border-t border-dashed border-[var(--ink-line)] pt-4">
+                <label className="flex items-center gap-2 cursor-pointer mb-1">
+                  <input
+                    type="checkbox"
+                    checked={bookable}
+                    onChange={(e) => setBookable(e.target.checked)}
+                    className="w-4 h-4 accent-[color:var(--gold-deep)]"
+                  />
+                  <span className="font-[family-name:var(--font-hand)] text-lg text-ink-2">
+                    Expérience réservable
+                  </span>
+                </label>
+                <p className="font-[family-name:var(--font-serif)] text-[12px] text-ink-faded mb-3 pl-1">
+                  Ajoute un bouton « réserver » sur la fiche du spot dans l'app (paiement via Stripe).
+                </p>
+              </div>
+
+              {bookable && (
+                <Input
+                  label="Intitulé de l'expérience *"
+                  value={bookingTitle}
+                  onChange={(e) => setBookingTitle(e.target.value)}
+                  placeholder="Ex. Tram 28, visite guidée"
+                />
+              )}
+              {bookable && (
+                <Input
+                  label="Prix (€) *"
+                  value={bookingPrice}
+                  onChange={(e) => setBookingPrice(e.target.value)}
+                  placeholder="Ex. 36"
+                  inputMode="decimal"
+                />
+              )}
 
               <div className="sm:col-span-2">
                 <Input
