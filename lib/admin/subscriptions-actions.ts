@@ -4,6 +4,7 @@ import { refresh } from "next/cache";
 
 import { getStaffSession } from "@/lib/admin/auth";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { STATUS_LABELS } from "@/lib/admin/subscription-status";
 
 type StaffDenial = { kind: "unauthenticated" } | { kind: "unauthorized" };
 
@@ -68,14 +69,6 @@ async function requireStaff(): Promise<StaffDenial | null> {
 }
 
 const DAY_MS = 86_400_000;
-
-export const STATUS_LABELS: Record<SubscriptionStatus, string> = {
-  active: "Actif",
-  in_grace: "Période de grâce",
-  expired: "Expiré",
-  cancelled: "Annulé",
-  paused: "En pause",
-};
 
 function statusLabel(status: string): string {
   return STATUS_LABELS[status as SubscriptionStatus] ?? status;
