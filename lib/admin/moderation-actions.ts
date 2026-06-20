@@ -123,3 +123,32 @@ export async function unbanUser(banId: number): Promise<ModerationActionResult> 
   refresh();
   return { kind: "ok" };
 }
+
+export type AppealDecision = "accept" | "reject";
+
+// Accept (lift the ban + mark resolved) or reject (mark dismissed) a ban appeal
+// via the admin_resolve_appeal RPC.
+export async function resolveAppeal(
+  banId: number,
+  decision: AppealDecision,
+): Promise<ModerationActionResult> {
+  const denied = await requireStaff();
+  if (denied) return denied;
+
+  if (!Number.isInteger(banId) || (decision !== "accept" && decision !== "reject")) {
+    return { kind: "error", message: "Requête d'appel invalide." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_resolve_appeal", {
+    target_ban_id: banId,
+    decision,
+  });
+
+  if (error) {
+    return mapRpcError(error, "Impossible de traiter cet appel.");
+  }
+
+  refresh();
+  return { kind: "ok" };
+}

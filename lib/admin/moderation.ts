@@ -349,6 +349,48 @@ export async function getReportDetailReadModel(
   };
 }
 
+// Bans that carry an appeal (appeal_status is set). Reuses the ban read-model;
+// the page derives a pending/accepted/rejected view from appealStatus.
+export async function getAppealsReadModel(): Promise<ModerationQueryResult<BanReadModel[]>> {
+  const guard = await requireStaffSession();
+  if (guard.kind !== "ok") return { kind: guard.kind };
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("bans")
+    .select("id, user_id, reason, banned_by, expires_at, appeal_status, created_at")
+    .not("appeal_status", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(100);
+
+  if (error) return mapQueryError(error, "Impossible de charger les appels.");
+
+  const rows = (data ?? []) as BanRow[];
+
+  let profiles: Map<string, ProfileSummary>;
+  try {
+    profiles = await loadProfiles(
+      supabase,
+      rows.flatMap((row) => [row.user_id, row.banned_by].filter(Boolean) as string[]),
+    );
+  } catch (profileError) {
+    return mapQueryError(profileError as QueryError, "Impossible de charger les profils associés.");
+  }
+
+  return {
+    kind: "ok",
+    data: rows.map<BanReadModel>((row) => ({
+      id: row.id,
+      user: profiles.get(row.user_id) ?? null,
+      reason: row.reason,
+      bannedBy: row.banned_by ? profiles.get(row.banned_by) ?? null : null,
+      expiresAt: row.expires_at,
+      appealStatus: row.appeal_status,
+      createdAt: row.created_at,
+    })),
+  };
+}
+
 export async function getBansReadModel(): Promise<ModerationQueryResult<BanReadModel[]>> {
   const guard = await requireStaffSession();
   if (guard.kind !== "ok") return { kind: guard.kind };
