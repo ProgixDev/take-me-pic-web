@@ -13,7 +13,8 @@ import {
   StatCard,
   useToast,
 } from "@/components/ui";
-import { plans, fmtNum } from "@/lib/data";
+import { fmtNum } from "@/lib/data";
+import { plans } from "@/lib/plans-catalog";
 import {
   BarChart,
   Bar,
