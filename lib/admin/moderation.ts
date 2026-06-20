@@ -289,6 +289,66 @@ export async function getReportsReadModel(): Promise<ModerationQueryResult<Repor
   return { kind: "ok", data: overview.data.reports };
 }
 
+// A single report enriched for the detail screen. Carries post_id / comment_id
+// so the decision panel can hide the offending content directly.
+export type ReportDetailModel = ReportReadModel & {
+  postId: number | null;
+  commentId: number | null;
+};
+
+export async function getReportDetailReadModel(
+  reportId: number,
+): Promise<ModerationQueryResult<ReportDetailModel> | { kind: "not_found" }> {
+  const guard = await requireStaffSession();
+  if (guard.kind !== "ok") return { kind: guard.kind };
+
+  if (!Number.isInteger(reportId)) return { kind: "not_found" };
+
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase
+    .from("reports")
+    .select(
+      "id, reporter_id, reported_user_id, post_id, comment_id, help_request_id, conversation_id, message_id, reason, status, resolver_id, resolved_at, created_at",
+    )
+    .eq("id", reportId)
+    .maybeSingle();
+
+  if (error) return mapQueryError(error, "Impossible de charger ce signalement.");
+  if (!data) return { kind: "not_found" };
+
+  const row = data as ReportRow;
+
+  let profiles: Map<string, ProfileSummary>;
+  try {
+    profiles = await loadProfiles(
+      supabase,
+      [row.reporter_id, row.reported_user_id, row.resolver_id].filter(Boolean) as string[],
+    );
+  } catch (profileError) {
+    return mapQueryError(profileError as QueryError, "Impossible de charger les profils associés.");
+  }
+
+  const reportedProfile = row.reported_user_id ? profiles.get(row.reported_user_id) ?? null : null;
+
+  return {
+    kind: "ok",
+    data: {
+      id: row.id,
+      reporter: profiles.get(row.reporter_id) ?? null,
+      targetType: reportTargetType(row),
+      targetLabel: reportTargetLabel(row, reportedProfile),
+      reportedUserId: row.reported_user_id,
+      reason: row.reason,
+      status: row.status,
+      resolver: row.resolver_id ? profiles.get(row.resolver_id) ?? null : null,
+      resolvedAt: row.resolved_at,
+      createdAt: row.created_at,
+      postId: row.post_id,
+      commentId: row.comment_id,
+    },
+  };
+}
+
 export async function getBansReadModel(): Promise<ModerationQueryResult<BanReadModel[]>> {
   const guard = await requireStaffSession();
   if (guard.kind !== "ok") return { kind: guard.kind };
