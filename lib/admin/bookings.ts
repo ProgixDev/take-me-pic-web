@@ -71,3 +71,59 @@ export async function getBookings(): Promise<AdminBookingsResult> {
   });
   return { kind: "ok", data: rows };
 }
+
+export type AdminBookingResult =
+  | { kind: "ok"; data: AdminBooking }
+  | { kind: "unauthenticated" }
+  | { kind: "unauthorized" }
+  | { kind: "not_found" }
+  | { kind: "error"; message: string };
+
+// Single booking for the detail screen. Accepts the `bk_<id>` display id used in
+// the list. Read-only — booking status stays webhook-owned (Stripe).
+export async function getBookingDetail(displayId: string): Promise<AdminBookingResult> {
+  const session = await getStaffSession();
+  if (session.kind === "unauthenticated") return { kind: "unauthenticated" };
+  if (session.kind !== "staff") return { kind: "unauthorized" };
+
+  const numericId = Number(displayId.replace(/^bk_/, ""));
+  if (!Number.isInteger(numericId)) return { kind: "not_found" };
+
+  const supabase = serviceClient();
+  const { data, error } = await supabase
+    .from("bookings")
+    .select("id, title, amount_cents, commission_cents, currency, status, scheduled_for, created_at, profiles(first_name, username, avatar_url)")
+    .eq("id", numericId)
+    .maybeSingle();
+
+  if (error) {
+    console.error("[admin/bookings] detail", error.message);
+    return { kind: "error", message: "Impossible de charger la réservation." };
+  }
+  if (!data) return { kind: "not_found" };
+
+  const r = data as Record<string, unknown>;
+  const p = r.profiles as { first_name?: string; username?: string; avatar_url?: string } | { first_name?: string; username?: string; avatar_url?: string }[] | null;
+  const profile = Array.isArray(p) ? p[0] : p;
+  const when = (r.scheduled_for as string | null) ?? (r.created_at as string);
+
+  return {
+    kind: "ok",
+    data: {
+      id: `bk_${r.id as number}`,
+      user: {
+        firstName: profile?.first_name ?? "—",
+        lastName: "",
+        email: profile?.username ? `@${profile.username}` : "",
+        avatar: profile?.avatar_url ?? null,
+        premium: false,
+      },
+      experience: r.title as string,
+      city: "",
+      amount: (r.amount_cents as number) / 100,
+      commission: (r.commission_cents as number) / 100,
+      status: STATUS_LABEL[r.status as string] ?? "en attente",
+      date: new Date(when).toLocaleDateString("fr-FR", { day: "2-digit", month: "short", year: "numeric" }),
+    },
+  };
+}
