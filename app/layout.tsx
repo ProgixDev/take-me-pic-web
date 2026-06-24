@@ -26,13 +26,32 @@ const dmMono = DM_Mono({
   weight: ["400", "500"],
 });
 
+const SITE_URL = process.env.NEXT_PUBLIC_SITE_URL ?? "https://take-me-pic-web-one.vercel.app";
+const TITLE = "Take Me Pic — On se prend en photo ?";
+const DESCRIPTION =
+  "Trouve un voyageur sympa à proximité qui veut bien prendre la photo. Une communauté de voyageurs qui se photographient les uns les autres.";
+
+// Icons (favicon.ico, icon.png, apple-icon.png) and the OpenGraph/Twitter images
+// (opengraph-image.png, twitter-image.png) are resolved from the app/ directory via
+// Next.js file conventions — see scripts/generate-brand-assets in the mobile repo.
 export const metadata: Metadata = {
-  title: "Take Me Pic — On se prend en photo ?",
-  description:
-    "Trouve un voyageur sympa à proximité qui veut bien prendre la photo. Une communauté de voyageurs qui se photographient les uns les autres.",
-  icons: {
-    icon: "/brand/take-me-pic-icon-transparent.svg",
-    apple: "/brand/take-me-pic-icon-transparent.svg",
+  metadataBase: new URL(SITE_URL),
+  title: TITLE,
+  description: DESCRIPTION,
+  applicationName: "Take Me Pic",
+  manifest: "/manifest.webmanifest",
+  openGraph: {
+    type: "website",
+    siteName: "Take Me Pic",
+    title: TITLE,
+    description: DESCRIPTION,
+    url: SITE_URL,
+    locale: "fr_FR",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: TITLE,
+    description: DESCRIPTION,
   },
 };
 
