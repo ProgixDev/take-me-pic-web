@@ -163,3 +163,28 @@ export async function reviewSpot(
   refresh();
   return { kind: "ok" };
 }
+
+// Permanently delete a spot from the admin console. Staff-only and audited via
+// the `admin_delete_spot` RPC (SECURITY DEFINER). Child rows (spot_photos,
+// spot_tips, saved_spots) cascade; itinerary/post links are nulled by their FKs.
+export async function deleteSpot(spotId: number, reason?: string): Promise<SpotActionResult> {
+  const denied = await requireStaff();
+  if (denied) return denied;
+
+  if (!Number.isInteger(spotId)) {
+    return { kind: "error", message: "Identifiant de spot invalide." };
+  }
+
+  const supabase = await createSupabaseServerClient();
+  const { error } = await supabase.rpc("admin_delete_spot", {
+    target_spot_id: spotId,
+    reason: reason?.trim() || null,
+  });
+
+  if (error) {
+    return mapRpcError(error, "Impossible de supprimer ce spot.");
+  }
+
+  refresh();
+  return { kind: "ok" };
+}
