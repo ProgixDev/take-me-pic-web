@@ -1,13 +1,14 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Star, MessageSquare, Clock, MapPin, CheckCircle, XCircle, Edit3, Camera, ShieldCheck } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { Star, MessageSquare, Clock, MapPin, CheckCircle, XCircle, Edit3, Camera, ShieldCheck, Trash2 } from "lucide-react";
 import Link from "next/link";
 import { AdminPage } from "@/components/admin/AdminPage";
 import { Avatar, Badge, Button, Modal, PaperCard, Stamp, useToast } from "@/components/ui";
 import { fmtNum } from "@/lib/data";
 import type { SpotDetail } from "@/lib/admin/spots";
-import { reviewSpot, type SpotDecision } from "@/lib/admin/spots-actions";
+import { reviewSpot, deleteSpot, type SpotDecision } from "@/lib/admin/spots-actions";
 import {
   SPOT_STATUS_LABEL,
   SPOT_STATUS_TONE,
@@ -19,8 +20,23 @@ import {
 export function SpotDetailClient({ detail }: { detail: SpotDetail }) {
   const { spot, reviewedBy, reviewedAt, photoCount, tips } = detail;
   const toast = useToast();
+  const router = useRouter();
   const [pending, startTransition] = useTransition();
   const [confirmAction, setConfirmAction] = useState<SpotDecision | null>(null);
+  const [confirmDelete, setConfirmDelete] = useState(false);
+
+  const handleDelete = () => {
+    startTransition(async () => {
+      const result = await deleteSpot(spot.id);
+      if (result.kind === "ok") {
+        toast.push(`Spot « ${spot.name} » supprimé.`, "ok");
+        router.push("/admin/spots");
+      } else {
+        toast.push(actionErrorMessage(result), "err");
+        setConfirmDelete(false);
+      }
+    });
+  };
 
   const handleAction = (decision: SpotDecision) => {
     startTransition(async () => {
@@ -256,6 +272,18 @@ export function SpotDetailClient({ detail }: { detail: SpotDetail }) {
               >
                 Rejeter
               </Button>
+              {/* Destructive action — separated from the review actions. */}
+              <div className="border-t border-ink/15 my-1.5" />
+              <Button
+                variant="danger"
+                size="sm"
+                full
+                icon={<Trash2 size={14} />}
+                onClick={() => setConfirmDelete(true)}
+                disabled={pending}
+              >
+                Supprimer définitivement
+              </Button>
             </div>
           </PaperCard>
         </div>
@@ -287,6 +315,28 @@ export function SpotDetailClient({ detail }: { detail: SpotDetail }) {
           {confirmAction === "approved"
             ? `Le spot « ${spot.name} » sera mis en ligne et visible par toute la communauté. L'action est journalisée.`
             : `Le spot « ${spot.name} » sera rejeté et restera visible uniquement par son auteur. L'action est journalisée.`}
+        </p>
+      </Modal>
+
+      {/* Delete confirm modal — irreversible. */}
+      <Modal
+        open={confirmDelete}
+        onClose={() => setConfirmDelete(false)}
+        title="Supprimer ce spot ?"
+        size="sm"
+        footer={
+          <>
+            <Button variant="paper" size="sm" onClick={() => setConfirmDelete(false)}>
+              Annuler
+            </Button>
+            <Button variant="danger" size="sm" disabled={pending} onClick={handleDelete}>
+              Supprimer
+            </Button>
+          </>
+        }
+      >
+        <p className="font-[family-name:var(--font-serif)] text-[15px] text-ink-faded leading-relaxed">
+          Le spot « {spot.name} » sera <strong>définitivement supprimé</strong> (photos, conseils et favoris associés inclus). Cette action est irréversible et journalisée.
         </p>
       </Modal>
     </AdminPage>

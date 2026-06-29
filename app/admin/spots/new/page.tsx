@@ -14,6 +14,7 @@ import {
   useToast,
 } from "@/components/ui";
 import { createSpot } from "@/lib/admin/spots-actions";
+import { CITY_GROUPS } from "@/lib/admin/cities";
 
 const ERROR_MESSAGES: Record<string, string> = {
   unauthenticated: "Session expirée — reconnecte-toi.",
@@ -184,8 +185,12 @@ export default function NewSpotPage() {
                 value={city}
                 onChange={(e) => setCity(e.target.value)}
               >
-                {["Paris", "Lisbonne", "Marrakech", "Barcelone", "Rome", "Tokyo", "Lyon", "Berlin", "Amsterdam", "Istanbul"].map((c) => (
-                  <option key={c} value={c}>{c}</option>
+                {CITY_GROUPS.map((g) => (
+                  <optgroup key={g.country} label={`${g.flag} ${g.country}`}>
+                    {g.cities.map((c) => (
+                      <option key={c} value={c}>{c}</option>
+                    ))}
+                  </optgroup>
                 ))}
               </Select>
 
